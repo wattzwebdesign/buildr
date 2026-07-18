@@ -13,6 +13,13 @@ return [
     'middleware' => ['web'],
 
     /*
+    | Admin editor mount point and middleware. Add your auth middleware per
+    | site, e.g. ['web', 'auth']. No role gating inside Buildr itself.
+    */
+    'admin_path' => 'buildr',
+    'admin_middleware' => ['web'],
+
+    /*
     | Responsive breakpoints (max-width, px) used by the style compiler for
     | tablet/mobile values on responsive controls.
     */

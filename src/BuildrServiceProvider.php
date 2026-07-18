@@ -39,6 +39,21 @@ class BuildrServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'buildr');
 
+        \Livewire\Livewire::component('buildr.dashboard', \Buildr\Http\Livewire\Dashboard::class);
+
+        \Illuminate\Support\Facades\Route::middleware(config('buildr.admin_middleware', ['web']))
+            ->prefix(config('buildr.admin_path', 'buildr'))
+            ->group(function () {
+                \Illuminate\Support\Facades\Route::get('/', fn () => redirect()->route('buildr.pages'));
+                \Illuminate\Support\Facades\Route::get('/pages', \Buildr\Http\Livewire\Dashboard::class)->name('buildr.pages');
+                \Illuminate\Support\Facades\Route::get('/assets/admin.css', function () {
+                    return response(file_get_contents(__DIR__.'/../resources/assets/admin.css'), 200, [
+                        'Content-Type' => 'text/css',
+                        'Cache-Control' => 'public, max-age=3600',
+                    ]);
+                })->name('buildr.admin.css');
+            });
+
         if ($prefix = config('buildr.route')) {
             \Illuminate\Support\Facades\Route::middleware(config('buildr.middleware', ['web']))
                 ->get(rtrim($prefix, '/').'/{slug?}', \Buildr\Http\PageController::class)
