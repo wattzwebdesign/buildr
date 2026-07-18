@@ -98,8 +98,8 @@ class Editor extends Component
         $this->insertAfter = null;
     }
 
-    /** Drag-and-drop from the library onto a container or column. */
-    public function dropElement(string $type, int $containerId, int $cols = 1): void
+    /** Drag-and-drop from the library onto a specific container column. */
+    public function dropInto(string $type, int $containerId, int $col = 0, int $cols = 1): void
     {
         $container = $this->page->nodes()->whereKey($containerId)->first();
         if (! $container || $container->type !== 'container') {
@@ -111,7 +111,7 @@ class Editor extends Component
                 'type' => 'container',
                 'parent_id' => $container->id,
                 'sort' => $container->children()->count(),
-                'data' => ['content' => ['widths' => self::COL_WIDTHS[$cols] ?? [100]] + $this->schemaDefaults('container')],
+                'data' => $this->containerData($cols, $col),
             ]);
             $this->resequence($container->id);
             $this->page->touch();
@@ -121,7 +121,83 @@ class Editor extends Component
         }
 
         $this->selectedId = $containerId;
-        $this->addElement($type);
+        $this->addElement($type, $col);
+    }
+
+    /** BC alias — old drop path without a column. */
+    public function dropElement(string $type, int $containerId, int $cols = 1): void
+    {
+        $this->dropInto($type, $containerId, 0, $cols);
+    }
+
+    /** Move an existing node before/after another node (drag reorder). */
+    public function moveNodeRelative(int $nodeId, int $targetId, string $position): void
+    {
+        $node = $this->page->nodes()->whereKey($nodeId)->first();
+        $target = $this->page->nodes()->whereKey($targetId)->first();
+
+        if (! $node || ! $target || $node->id === $target->id || ! $target->parent_id) {
+            return;
+        }
+        if ($this->containsNode($node, $target->parent_id)) {
+            return; // can't move a container inside itself
+        }
+
+        $oldParent = $node->parent_id;
+        $sort = $target->sort + ($position === 'after' ? 1 : 0);
+
+        $this->page->nodes()->where('parent_id', $target->parent_id)->where('sort', '>=', $sort)->increment('sort');
+
+        $data = $node->data ?? [];
+        $data['content']['_col'] = $target->data['content']['_col'] ?? 0;
+        $node->update(['parent_id' => $target->parent_id, 'sort' => $sort, 'data' => $data]);
+
+        $this->resequence($oldParent);
+        $this->resequence($target->parent_id);
+        $this->page->touch();
+        $this->selectNode($node->id);
+    }
+
+    /** Move an existing node into a container column (append). */
+    public function moveNodeToColumn(int $nodeId, int $containerId, int $col): void
+    {
+        $node = $this->page->nodes()->whereKey($nodeId)->first();
+        $container = $this->page->nodes()->whereKey($containerId)->first();
+
+        if (! $node || ! $container || $container->type !== 'container' || $node->id === $container->id) {
+            return;
+        }
+        if ($this->containsNode($node, $containerId)) {
+            return;
+        }
+
+        $oldParent = $node->parent_id;
+        $data = $node->data ?? [];
+        $data['content']['_col'] = $col;
+        $node->update([
+            'parent_id' => $containerId,
+            'sort' => ($container->children()->max('sort') ?? -1) + 1,
+            'data' => $data,
+        ]);
+
+        $this->resequence($oldParent);
+        $this->resequence($containerId);
+        $this->page->touch();
+        $this->selectNode($node->id);
+    }
+
+    /** Is $possibleDescendantId inside $node's subtree (or the node itself)? */
+    private function containsNode(PageNode $node, int $possibleDescendantId): bool
+    {
+        $current = $this->page->nodes()->whereKey($possibleDescendantId)->first();
+        while ($current) {
+            if ($current->id === $node->id) {
+                return true;
+            }
+            $current = $current->parent_id ? $this->page->nodes()->whereKey($current->parent_id)->first() : null;
+        }
+
+        return false;
     }
 
     public function toggleNav(): void
@@ -131,9 +207,23 @@ class Editor extends Component
 
     private const COL_WIDTHS = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]];
 
+    /** New containers ship with 10px padding on every side (Elementor-style). */
+    private function containerData(int $cols, int $col = 0): array
+    {
+        $sides = [];
+        foreach (['top', 'right', 'bottom', 'left'] as $side) {
+            $sides[$side] = ['value' => 10, 'unit' => 'px'];
+        }
+
+        return [
+            'content' => ['widths' => self::COL_WIDTHS[$cols] ?? [100], '_col' => $col] + $this->schemaDefaults('container'),
+            'advanced' => ['padding' => $sides],
+        ];
+    }
+
     public function addContainer(int $cols): void
     {
-        $data = ['content' => ['widths' => self::COL_WIDTHS[$cols] ?? [100]] + $this->schemaDefaults('container')];
+        $data = $this->containerData($cols);
 
         // A "+" gap picked a page-level spot — insert a root section there.
         // Otherwise: nest inside the selected container, or beside the
@@ -171,7 +261,7 @@ class Editor extends Component
         $this->selectNode($node->id);
     }
 
-    public function addElement(string $type): void
+    public function addElement(string $type, ?int $col = null): void
     {
         $registry = app(ElementRegistry::class);
         if (! $registry->has($type)) {
@@ -190,23 +280,26 @@ class Editor extends Component
         if ($current && $current->type === 'container') {
             $parent = $current;
             $sort = $parent->children()->count();
+            $col ??= 0;
         } elseif ($current && $current->parent_id) {
             $parent = $current->parent;
             $sort = $current->sort + 1;
+            $col ??= $current->data['content']['_col'] ?? 0;
         } else {
             $parent = $this->page->nodes()->create([
                 'type' => 'container',
                 'sort' => ($this->page->rootNodes()->max('sort') ?? -1) + 1,
-                'data' => ['content' => $this->schemaDefaults('container')],
+                'data' => $this->containerData(1),
             ]);
             $sort = 0;
+            $col ??= 0;
         }
 
         $node = $this->page->nodes()->create([
             'type' => $type,
             'parent_id' => $parent->id,
             'sort' => $sort,
-            'data' => ['content' => $this->schemaDefaults($type)],
+            'data' => ['content' => ['_col' => $col] + $this->schemaDefaults($type)],
         ]);
 
         $this->resequence($parent->id);

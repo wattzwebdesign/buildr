@@ -77,6 +77,31 @@ class PageRenderer
         return ['roots' => $roots, 'css' => $compiler->compile()];
     }
 
+    /**
+     * Partition a container's children into its columns. Children carry a
+     * `_col` index in content; legacy children without one flow in order
+     * (index % columns), which matches the old auto-placement exactly.
+     *
+     * @return array<int, array{html: string, count: int}>
+     */
+    public function renderContainerColumns(PageNode $node, int $cols): array
+    {
+        $cols = max(1, $cols);
+        $columns = array_fill(0, $cols, ['html' => '', 'count' => 0]);
+
+        $children = $node->children()
+            ->when(! $this->editorMode, fn ($q) => $q->where('visible', true))
+            ->get()->values();
+
+        foreach ($children as $i => $child) {
+            $col = min((int) ($child->data['content']['_col'] ?? ($i % $cols)), $cols - 1);
+            $columns[$col]['html'] .= $this->renderNode($child, $this->activeCompiler);
+            $columns[$col]['count']++;
+        }
+
+        return $columns;
+    }
+
     public function renderChildren(PageNode $parent): string
     {
         $html = '';
@@ -114,6 +139,9 @@ class PageRenderer
             $attrs = 'data-bnode="'.$node->id.'"';
             if ($node->type === 'container') {
                 $attrs .= ' data-bcontainer="'.$node->id.'"';
+            }
+            if ($node->parent_id) {
+                $attrs .= ' draggable="true"';
             }
             if (! $node->visible) {
                 $attrs .= ' data-bhidden';

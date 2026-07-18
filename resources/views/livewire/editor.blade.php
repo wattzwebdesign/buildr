@@ -16,13 +16,19 @@ body{overflow:hidden}
 [data-bnode]:not(section){cursor:pointer}
 .page-frame [data-bnode]:hover{outline:1px dashed rgba(255,178,0,.65);outline-offset:2px}
 [data-bhidden]{opacity:.35}
+.page-frame .bcol{display:flex;flex-direction:column;gap:12px;min-width:0}
 .bcol-ph{
   border:1.5px dashed rgba(150,150,160,.5);border-radius:8px;min-height:110px;
   display:grid;place-items:center;font-family:Archivo,sans-serif;font-size:12px;
-  color:#8b8f98;cursor:pointer;transition:.15s;margin:6px 0;
+  color:#8b8f98;cursor:pointer;transition:.15s;
 }
-.bcol-ph:hover,.bcol-ph.drop-hot{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.06)}
-[data-bcontainer].drop-hot{outline:2px dashed var(--accent);outline-offset:-2px}
+.bcol-ph.mini{min-height:34px;opacity:0;font-size:15px}
+.bcol:hover .bcol-ph.mini{opacity:.65}
+.bcol-ph:hover,.bcol-ph.drop-hot{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.06);opacity:1 !important}
+[data-bcontainer].drop-hot,.bcol.drop-hot{outline:2px dashed var(--accent);outline-offset:-2px}
+.page-frame [data-bnode].drop-before{box-shadow:0 -3px 0 0 var(--accent) !important}
+.page-frame [data-bnode].drop-after{box-shadow:0 3px 0 0 var(--accent) !important}
+.page-frame [data-bnode][draggable]{cursor:grab}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
@@ -193,7 +199,7 @@ body{overflow:hidden}
            @click.prevent="
              const btn = $event.target.closest('[data-tree]'); if (btn) return;
              const ph = $event.target.closest('[data-bcolph]');
-             if (ph) { $wire.openLibraryFor(parseInt(ph.dataset.bcolph)); return; }
+             if (ph) { $wire.openLibraryFor(parseInt(ph.dataset.bcolph.split(':')[0])); return; }
              const n = $event.target.closest('[data-bnode]');
              if (n && !n.closest('.sec-tools')) { $wire.selectNode(parseInt(n.dataset.bnode)); return; }
              const s = $event.target.closest('.pv-sec');
@@ -240,39 +246,84 @@ body{overflow:hidden}
       (() => {
         if (window.__buildrDnd) return;
         window.__buildrDnd = true;
-        const hot = (el, on) => el && el.classList.toggle('drop-hot', on);
-        let current = null;
+
+        let drag = null;      // {kind:'new',type,cols} | {kind:'move',id}
+        let hotEl = null;     // column/container highlight
+        let lineEl = null;    // element with before/after indicator
+
+        const clear = () => {
+          hotEl?.classList.remove('drop-hot'); hotEl = null;
+          lineEl?.classList.remove('drop-before', 'drop-after'); lineEl = null;
+        };
+        const wire = () => window.Livewire.all()[0]?.$wire;
+        const colTarget = e => e.target.closest('[data-bcolph], [data-bcol], [data-bcontainer]');
+        const colInfo = t => {
+          const raw = t.dataset.bcolph || t.dataset.bcol || (t.dataset.bcontainer + ':0');
+          const [id, col] = raw.split(':');
+          return { id: parseInt(id), col: parseInt(col || '0') };
+        };
 
         document.addEventListener('dragstart', e => {
           const card = e.target.closest('.el-card[data-etype]');
-          if (!card) return;
-          const payload = card.dataset.etype + (card.dataset.cols ? ':' + card.dataset.cols : '');
-          e.dataTransfer.setData('text/plain', 'buildr:' + payload);
+          if (card) {
+            drag = { kind: 'new', type: card.dataset.etype, cols: parseInt(card.dataset.cols || '1') };
+            e.dataTransfer.setData('text/plain', 'buildr');
+            return;
+          }
+          const el = e.target.closest('.page-frame [data-bnode][draggable]');
+          if (el) {
+            drag = { kind: 'move', id: parseInt(el.dataset.bnode) };
+            e.dataTransfer.setData('text/plain', 'buildr');
+            e.stopPropagation();
+          }
         });
 
         document.addEventListener('dragover', e => {
-          const target = e.target.closest('[data-bcolph], [data-bcontainer]');
-          if (!target) return;
-          e.preventDefault();
-          if (current !== target) { hot(current, false); current = target; hot(current, true); }
-        });
+          if (!drag) return;
 
-        document.addEventListener('dragleave', e => {
-          if (current && !current.contains(e.relatedTarget)) { hot(current, false); current = null; }
+          // moving: hovering another element shows a before/after line
+          if (drag.kind === 'move') {
+            const el = e.target.closest('.page-frame [data-bnode][draggable]');
+            if (el && parseInt(el.dataset.bnode) !== drag.id) {
+              e.preventDefault();
+              const rect = el.getBoundingClientRect();
+              const before = e.clientY < rect.top + rect.height / 2;
+              if (lineEl !== el) { clear(); lineEl = el; }
+              el.classList.toggle('drop-before', before);
+              el.classList.toggle('drop-after', !before);
+              return;
+            }
+          }
+
+          const target = colTarget(e);
+          if (!target) { clear(); return; }
+          e.preventDefault();
+          if (hotEl !== target) { clear(); hotEl = target; target.classList.add('drop-hot'); }
         });
 
         document.addEventListener('drop', e => {
-          const target = e.target.closest('[data-bcolph], [data-bcontainer]');
-          hot(current, false); current = null;
-          if (!target) return;
-          const payload = e.dataTransfer.getData('text/plain');
-          if (!payload.startsWith('buildr:')) return;
+          if (!drag) return;
+          const w = wire();
+          const finish = () => { clear(); drag = null; };
+
+          if (drag.kind === 'move' && lineEl) {
+            e.preventDefault();
+            const pos = lineEl.classList.contains('drop-before') ? 'before' : 'after';
+            w?.call('moveNodeRelative', drag.id, parseInt(lineEl.dataset.bnode), pos);
+            return finish();
+          }
+
+          const target = colTarget(e);
+          if (!target) return finish();
           e.preventDefault();
-          const [type, cols] = payload.slice(7).split(':');
-          const id = parseInt(target.dataset.bcolph || target.dataset.bcontainer);
-          const comp = window.Livewire.all()[0];
-          if (comp) comp.$wire.call('dropElement', type, id, parseInt(cols || '1'));
+          const { id, col } = colInfo(target);
+
+          if (drag.kind === 'move') w?.call('moveNodeToColumn', drag.id, id, col);
+          else w?.call('dropInto', drag.type, id, col, drag.cols);
+          finish();
         });
+
+        document.addEventListener('dragend', () => { clear(); drag = null; });
       })();
     </script>
 

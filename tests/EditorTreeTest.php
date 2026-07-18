@@ -172,6 +172,100 @@ class EditorTreeTest extends TestCase
         $this->assertSame(2, substr_count($html, 'data-bcontainer'));
     }
 
+    public function test_multiple_elements_stack_in_one_column(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 2);
+
+        $container = $page->rootNodes()->first();
+
+        // heading + text + button all into column 0; image into column 1
+        $component->call('dropInto', 'heading', $container->id, 0)
+            ->call('dropInto', 'text', $container->id, 0)
+            ->call('dropInto', 'button', $container->id, 0)
+            ->call('dropInto', 'image', $container->id, 1);
+
+        $cols = $page->nodes()->whereNotNull('parent_id')->orderBy('sort')->get()
+            ->map(fn ($n) => $n->data['content']['_col'])->all();
+        $this->assertSame([0, 0, 0, 1], $cols);
+
+        // public render: left column wraps its 3 elements in ONE flex div
+        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $this->assertSame(1, substr_count($html, 'class="bcol"'));
+        $this->assertStringContainsString('<h2', $html);
+        $this->assertStringContainsString('<img', $html);
+    }
+
+    public function test_move_node_relative_reorders_within_column(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1);
+        $container = $page->rootNodes()->first();
+
+        $component->call('dropInto', 'heading', $container->id, 0)
+            ->call('dropInto', 'text', $container->id, 0)
+            ->call('dropInto', 'button', $container->id, 0);
+
+        $button = $page->nodes()->where('type', 'button')->first();
+        $heading = $page->nodes()->where('type', 'heading')->first();
+
+        // drag the button above the heading
+        $component->call('moveNodeRelative', $button->id, $heading->id, 'before');
+
+        $types = $page->nodes()->whereNotNull('parent_id')->orderBy('sort')->pluck('type')->all();
+        $this->assertSame(['button', 'heading', 'text'], $types);
+    }
+
+    public function test_move_node_to_another_containers_column(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 2);
+        $first = $page->rootNodes()->first();
+        $component->call('openLibrary', $first->id)->call('addContainer', 1);
+        $second = $page->rootNodes()->orderBy('sort')->get()->last();
+
+        $component->call('dropInto', 'heading', $first->id, 0);
+        $heading = $page->nodes()->where('type', 'heading')->first();
+
+        $component->call('moveNodeToColumn', $heading->id, $second->id, 0);
+
+        $this->assertSame($second->id, $heading->fresh()->parent_id);
+        $this->assertSame(0, $heading->fresh()->data['content']['_col']);
+    }
+
+    public function test_container_cannot_be_moved_into_its_own_descendant(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)     // root, selected
+            ->call('addContainer', 1);    // nested inside root
+
+        $root = $page->rootNodes()->first();
+        $inner = $root->children()->first();
+
+        $component->call('moveNodeToColumn', $root->id, $inner->id, 0);
+
+        $this->assertNull($root->fresh()->parent_id); // unchanged
+    }
+
+    public function test_new_containers_default_to_10px_padding(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        Livewire::test(Editor::class, ['page' => $page])->call('addContainer', 1);
+
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $this->assertStringContainsString('padding-top:10px', $css);
+        $this->assertStringContainsString('padding-left:10px', $css);
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);
