@@ -1,4 +1,4 @@
-<div class="app" x-data="{ dev: 'desktop' }">
+<div class="app">
 <style>body{overflow:hidden}</style>
 
   <!-- ============ LEFT PANEL ============ -->
@@ -36,40 +36,14 @@
       @endif
 
       @foreach ($fields as $field)
-        <div class="fld" wire:key="fld-{{ $selectedId }}-{{ $tab }}-{{ $field['key'] }}">
-          <div class="fld-label">{{ $field['label'] }}</div>
-
-          @if ($tab === 'content' && in_array($field['type'], ['text']))
-            <input class="in" wire:model.blur="content.{{ $field['key'] }}">
-          @elseif ($tab === 'content' && in_array($field['type'], ['textarea', 'richtext']))
-            <textarea class="in" rows="4" wire:model.blur="content.{{ $field['key'] }}"></textarea>
-          @elseif ($tab === 'content' && $field['type'] === 'select' && !empty($field['options']))
-            <select class="in" wire:model.change="content.{{ $field['key'] }}">
-              @foreach ($field['options'] as $value => $label)
-                <option value="{{ $value }}">{{ $label }}</option>
-              @endforeach
-            </select>
-          @elseif ($tab === 'content' && $field['type'] === 'toggle')
-            <div class="togglerow">
-              <span>{{ $field['label'] }}</span>
-              <input type="checkbox" wire:model.change="content.{{ $field['key'] }}">
-            </div>
-          @else
-            <div class="fld-hint" style="padding:9px 11px;border:1px dashed var(--panel-line);border-radius:8px">
-              {{ ucfirst($field['type']) }} control — wired in the next stage
-            </div>
-          @endif
-
-          @if (!empty($field['help']))
-            <div class="fld-hint">{!! $field['help'] !!}</div>
-          @endif
-        </div>
+        @include('buildr::livewire.partials.control', ['field' => $field, 'tab' => $tab, 'device' => $device])
       @endforeach
     </div>
 
     <div class="panel-foot">
       <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--chrome-muted);padding:0 8px">
-        {{ $page->isPublished() ? 'PUBLISHED' : 'DRAFT' }}
+        <span wire:loading.remove>{{ $page->isPublished() ? 'PUBLISHED' : 'DRAFT' }}</span>
+        <span wire:loading style="color:var(--accent)">SAVING…</span>
       </span>
       <button class="publish" wire:click="publish" style="margin-left:auto">
         <span wire:loading.remove wire:target="publish">{{ $page->isPublished() ? 'Update' : 'Publish' }}</span>
@@ -79,7 +53,7 @@
   </aside>
 
   <!-- ============ CANVAS ============ -->
-  <main class="canvas" :class="{ 'dev-tablet': dev === 'tablet', 'dev-mobile': dev === 'mobile' }">
+  <main class="canvas {{ $device === 'tablet' ? 'dev-tablet' : ($device === 'mobile' ? 'dev-mobile' : '') }}">
     <div class="canvas-bar">
       <div class="crumb">
         <span class="site">{{ \Buildr\Models\SiteSetting::get('name', config('app.name')) }}</span>
@@ -87,14 +61,14 @@
         <span>{{ $page->title }}</span>
         <span class="status mono">{{ strtoupper($page->updated_at->diffForHumans(short: true)) }}</span>
       </div>
-      <div class="devices">
-        <button :class="{ on: dev === 'desktop' }" @click="dev = 'desktop'" title="Desktop">
+      <div class="devices" title="Preview + edit responsive values for this device">
+        <button class="{{ $device === 'desktop' ? 'on' : '' }}" wire:click="setDevice('desktop')" title="Desktop">
           <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         </button>
-        <button :class="{ on: dev === 'tablet' }" @click="dev = 'tablet'" title="Tablet">
+        <button class="{{ $device === 'tablet' ? 'on' : '' }}" wire:click="setDevice('tablet')" title="Tablet">
           <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
         </button>
-        <button :class="{ on: dev === 'mobile' }" @click="dev = 'mobile'" title="Mobile">
+        <button class="{{ $device === 'mobile' ? 'on' : '' }}" wire:click="setDevice('mobile')" title="Mobile">
           <svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
         </button>
       </div>
