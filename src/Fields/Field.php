@@ -29,6 +29,8 @@ class Field implements Arrayable
     public bool $states = false;     // normal / hover
     public bool $required = false;
     public ?string $help = null;
+    public bool $buttons = false;    // render select as icon button group
+    public array $icons = [];        // option value => icon name (for buttons mode)
 
     private function __construct(
         public string $type,
@@ -94,6 +96,15 @@ class Field implements Arrayable
     public function responsive(): static { $this->responsive = true; return $this; }
     public function states(): static { $this->states = true; return $this; }
 
+    /** Render this select as a one-click icon group instead of a dropdown. */
+    public function buttons(array $icons = []): static
+    {
+        $this->buttons = true;
+        $this->icons = $icons;
+
+        return $this;
+    }
+
     public function toArray(): array
     {
         return array_filter([
@@ -108,6 +119,8 @@ class Field implements Arrayable
             'states' => $this->states,
             'required' => $this->required,
             'help' => $this->help,
+            'buttons' => $this->buttons,
+            'icons' => $this->icons,
         ], fn ($v) => $v !== null && $v !== [] && $v !== false);
     }
 }

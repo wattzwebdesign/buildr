@@ -47,7 +47,8 @@ abstract class Element
                 'center' => 'Center',
                 'end' => 'End',
                 'stretch' => 'Stretch',
-            ])->label('Align self')->responsive(),
+            ])->label('Align self')->responsive()
+                ->buttons(['' => 'ban', 'start' => 'h-start', 'center' => 'h-center', 'end' => 'h-end', 'stretch' => 'h-stretch']),
             Field::sides('margin')->responsive(),
             Field::sides('padding')->responsive(),
             Field::text('anchor_id')->label('Anchor ID'),

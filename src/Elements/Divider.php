@@ -16,10 +16,12 @@ class Divider extends Element
     public static function contentFields(): array
     {
         return [
-            Field::select('style', ['solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('solid'),
+            Field::select('style', ['solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('solid')
+                ->buttons(['solid' => 'line-solid', 'dashed' => 'line-dashed', 'dotted' => 'line-dotted']),
             Field::unit('weight', ['px'])->default(['value' => 1, 'unit' => 'px']),
             Field::unit('width', ['px', '%'])->responsive()->default(['value' => 100, 'unit' => '%']),
-            Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'])->default('center'),
+            Field::select('align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'])->default('center')
+                ->buttons(['left' => 'h-start', 'center' => 'h-center', 'right' => 'h-end']),
         ];
     }
 

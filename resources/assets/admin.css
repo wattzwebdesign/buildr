@@ -637,3 +637,13 @@ textarea.in{resize:vertical;line-height:1.5}
 /* publish button disabled + dirty dot */
 .publish:disabled{opacity:.45;cursor:default}
 .publish:disabled:hover{background:var(--accent)}
+
+/* icon button groups (alignment etc.) */
+.segi{display:flex;gap:5px;flex-wrap:wrap}
+.segi button{
+  flex:1;min-width:38px;height:32px;border:1px solid var(--panel-line);border-radius:8px;
+  background:var(--panel-card);display:grid;place-items:center;color:var(--muted);transition:.12s;
+}
+.segi button:hover{color:var(--ink);border-color:var(--muted-2)}
+.segi button.on{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.08)}
+.segi button svg.ic{width:15px;height:15px;stroke-width:1.6}

@@ -35,7 +35,8 @@ class Heading extends Element
             Field::unit('line_height', ['', 'px', 'em']),
             Field::unit('letter_spacing', ['px', 'em']),
             Field::select('text_transform', ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize']),
-            Field::select('text_align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'])->responsive(),
+            Field::select('text_align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'])->responsive()
+                ->buttons(['left' => 'text-left', 'center' => 'text-center', 'right' => 'text-right']),
         ];
     }
 }

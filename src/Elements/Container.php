@@ -33,23 +33,27 @@ class Container extends Element
                 'start' => 'Top',
                 'center' => 'Center',
                 'end' => 'Bottom',
-            ])->label('Vertical align')->default('stretch'),
+            ])->label('Vertical align')->default('stretch')
+                ->buttons(['stretch' => 'v-stretch', 'start' => 'v-top', 'center' => 'v-center', 'end' => 'v-bottom']),
             Field::select('col_halign', [
                 '' => 'Default (stretch)',
                 'flex-start' => 'Left',
                 'center' => 'Center',
                 'flex-end' => 'Right',
-            ])->label('Align elements')->help('Horizontal alignment of stacked elements inside each column'),
+            ])->label('Align elements')->help('Horizontal alignment of stacked elements inside each column')
+                ->buttons(['' => 'h-stretch', 'flex-start' => 'h-start', 'center' => 'h-center', 'flex-end' => 'h-end']),
             Field::select('col_valign', [
                 '' => 'Default (top)',
                 'center' => 'Center',
                 'flex-end' => 'Bottom',
                 'space-between' => 'Space between',
-            ])->label('Distribute elements')->help('Vertical distribution of stacked elements inside each column'),
+            ])->label('Distribute elements')->help('Vertical distribution of stacked elements inside each column')
+                ->buttons(['' => 'v-top', 'center' => 'v-center', 'flex-end' => 'v-bottom', 'space-between' => 'v-between']),
             Field::unit('element_gap', ['px', 'em', 'rem'])->label('Element gap')
                 ->help('Space between stacked elements in a column (default 12px)'),
             Field::unit('min_height', ['px', 'vh'])->responsive(),
-            Field::select('width_mode', ['boxed' => 'Boxed', 'full' => 'Full width'])->default('boxed'),
+            Field::select('width_mode', ['boxed' => 'Boxed', 'full' => 'Full width'])->default('boxed')
+                ->buttons(['boxed' => 'boxed', 'full' => 'full']),
             Field::unit('max_width', ['px', '%'])->default(['value' => 1160, 'unit' => 'px']),
             Field::select('tag', [
                 'div' => 'div', 'section' => 'section', 'header' => 'header',
@@ -64,7 +68,8 @@ class Container extends Element
     {
         return [
             Field::color('background'),
-            Field::select('border_style', ['none' => 'None', 'solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('none'),
+            Field::select('border_style', ['none' => 'None', 'solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('none')
+                ->buttons(['none' => 'ban', 'solid' => 'line-solid', 'dashed' => 'line-dashed', 'dotted' => 'line-dotted']),
             Field::sides('border_width', ['px']),
             Field::color('border_color'),
             Field::sides('border_radius', ['px', '%']),

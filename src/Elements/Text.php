@@ -26,7 +26,8 @@ class Text extends Element
             Field::color('color'),
             Field::unit('font_size', ['px', 'em', 'rem'])->responsive(),
             Field::unit('line_height', ['', 'px', 'em']),
-            Field::select('text_align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'justify' => 'Justify'])->responsive(),
+            Field::select('text_align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'justify' => 'Justify'])->responsive()
+                ->buttons(['left' => 'text-left', 'center' => 'text-center', 'right' => 'text-right', 'justify' => 'text-justify']),
             Field::color('link_color')->states(),
         ];
     }
