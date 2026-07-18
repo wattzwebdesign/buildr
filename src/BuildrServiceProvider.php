@@ -40,12 +40,14 @@ class BuildrServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'buildr');
 
         \Livewire\Livewire::component('buildr.dashboard', \Buildr\Http\Livewire\Dashboard::class);
+        \Livewire\Livewire::component('buildr.editor', \Buildr\Http\Livewire\Editor::class);
 
         \Illuminate\Support\Facades\Route::middleware(config('buildr.admin_middleware', ['web']))
             ->prefix(config('buildr.admin_path', 'buildr'))
             ->group(function () {
                 \Illuminate\Support\Facades\Route::get('/', fn () => redirect()->route('buildr.pages'));
                 \Illuminate\Support\Facades\Route::get('/pages', \Buildr\Http\Livewire\Dashboard::class)->name('buildr.pages');
+                \Illuminate\Support\Facades\Route::get('/pages/{page}/edit', \Buildr\Http\Livewire\Editor::class)->name('buildr.edit');
                 \Illuminate\Support\Facades\Route::get('/assets/admin.css', function () {
                     return response(file_get_contents(__DIR__.'/../resources/assets/admin.css'), 200, [
                         'Content-Type' => 'text/css',

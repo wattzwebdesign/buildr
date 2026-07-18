@@ -59,7 +59,7 @@
             @if ($page->isPublished())
               <a class="pl-edit" href="/{{ $page->slug }}" target="_blank" title="View live">View</a>
             @endif
-            <a class="pl-edit" href="#" title="Editor — next stage">Edit</a>
+            <a class="pl-edit" href="{{ route('buildr.edit', $page) }}">Edit</a>
             <button class="pl-edit" style="color:var(--danger)"
                     wire:click="deletePage({{ $page->id }})"
                     wire:confirm="Delete “{{ $page->title }}” and all its content?">✕</button>

@@ -48,6 +48,31 @@ class PageRenderer
         return Cache::remember($key, now()->addWeek(), fn () => $this->render($page));
     }
 
+    /**
+     * Editor-mode render: each root section separately (so the canvas can
+     * wrap them in selection chrome) plus the compiled CSS for the page.
+     *
+     * @return array{roots: array<int, array{id: int, type: string, label: string, html: string}>, css: string}
+     */
+    public function renderEditor(Page $page): array
+    {
+        $page->load(['nodes' => fn ($q) => $q->where('visible', true)]);
+
+        $compiler = new StyleCompiler(config('buildr.breakpoints', ['tablet' => 1024, 'mobile' => 640]));
+
+        $roots = [];
+        foreach ($page->nodes->whereNull('parent_id')->sortBy('sort') as $node) {
+            $roots[] = [
+                'id' => $node->id,
+                'type' => $node->type,
+                'label' => $this->elements->get($node->type)::label(),
+                'html' => $this->renderNode($node, $compiler),
+            ];
+        }
+
+        return ['roots' => $roots, 'css' => $compiler->compile()];
+    }
+
     public function renderChildren(PageNode $parent): string
     {
         $html = '';
