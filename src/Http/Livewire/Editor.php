@@ -99,10 +99,24 @@ class Editor extends Component
     }
 
     /** Drag-and-drop from the library onto a container or column. */
-    public function dropElement(string $type, int $containerId): void
+    public function dropElement(string $type, int $containerId, int $cols = 1): void
     {
         $container = $this->page->nodes()->whereKey($containerId)->first();
         if (! $container || $container->type !== 'container') {
+            return;
+        }
+
+        if ($type === 'container') {
+            $node = $this->page->nodes()->create([
+                'type' => 'container',
+                'parent_id' => $container->id,
+                'sort' => $container->children()->count(),
+                'data' => ['content' => ['widths' => self::COL_WIDTHS[$cols] ?? [100]] + $this->schemaDefaults('container')],
+            ]);
+            $this->resequence($container->id);
+            $this->page->touch();
+            $this->selectNode($node->id);
+
             return;
         }
 
@@ -115,18 +129,44 @@ class Editor extends Component
         $this->showNav = ! $this->showNav;
     }
 
+    private const COL_WIDTHS = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]];
+
     public function addContainer(int $cols): void
     {
-        $widths = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]][$cols] ?? [100];
+        $data = ['content' => ['widths' => self::COL_WIDTHS[$cols] ?? [100]] + $this->schemaDefaults('container')];
 
-        $sort = $this->insertSort();
-        $node = $this->page->nodes()->create([
-            'type' => 'container',
-            'sort' => $sort,
-            'data' => ['content' => ['widths' => $widths] + $this->schemaDefaults('container')],
-        ]);
+        // A "+" gap picked a page-level spot — insert a root section there.
+        // Otherwise: nest inside the selected container, or beside the
+        // selected element inside its parent. No selection = root at end.
+        $current = $this->insertAfter === null ? $this->node() : null;
 
-        $this->resequence(null);
+        if ($current && $current->type === 'container') {
+            $node = $this->page->nodes()->create([
+                'type' => 'container',
+                'parent_id' => $current->id,
+                'sort' => $current->children()->count(),
+                'data' => $data,
+            ]);
+            $this->resequence($current->id);
+        } elseif ($current && $current->parent_id) {
+            $sort = $current->sort + 1;
+            $this->page->nodes()->where('parent_id', $current->parent_id)->where('sort', '>=', $sort)->increment('sort');
+            $node = $this->page->nodes()->create([
+                'type' => 'container',
+                'parent_id' => $current->parent_id,
+                'sort' => $sort,
+                'data' => $data,
+            ]);
+            $this->resequence($current->parent_id);
+        } else {
+            $node = $this->page->nodes()->create([
+                'type' => 'container',
+                'sort' => $this->insertSort(),
+                'data' => $data,
+            ]);
+            $this->resequence(null);
+        }
+
         $this->page->touch();
         $this->selectNode($node->id);
     }
@@ -443,17 +483,25 @@ class Editor extends Component
         $registry = app(ElementRegistry::class);
         $library = collect($registry->schemas())->groupBy(fn ($s) => $s['group']);
 
-        $tree = $this->page->nodes()->whereNull('parent_id')->with('children')->orderBy('sort')->get()
-            ->map(fn ($root) => [
-                'id' => $root->id,
-                'label' => $registry->get($root->type)::label(),
-                'visible' => $root->visible,
-                'children' => $root->children->map(fn ($c) => [
-                    'id' => $c->id,
-                    'label' => $registry->get($c->type)::label(),
-                    'visible' => $c->visible,
-                ])->all(),
-            ]);
+        $walk = function ($nodes, int $depth) use (&$walk, $registry): array {
+            $rows = [];
+            foreach ($nodes as $n) {
+                $rows[] = [
+                    'id' => $n->id,
+                    'label' => $registry->get($n->type)::label(),
+                    'visible' => $n->visible,
+                    'depth' => $depth,
+                ];
+                $rows = array_merge($rows, $walk($n->children, $depth + 1));
+            }
+
+            return $rows;
+        };
+
+        $tree = $walk(
+            $this->page->nodes()->whereNull('parent_id')->with('children.children.children')->orderBy('sort')->get(),
+            0
+        );
 
         return view('buildr::livewire.editor', [
             'rendered' => $rendered,

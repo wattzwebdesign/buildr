@@ -61,7 +61,8 @@ body{overflow:hidden}
         <div class="ctl-group"><span>Layout</span></div>
         <div class="lib-cards">
           @foreach ([1 => 'Container', 2 => '2 Columns', 3 => '3 Columns', 4 => '4 Columns'] as $cols => $label)
-            <button class="el-card" x-show="!q || '{{ strtolower($label) }}'.includes(q.toLowerCase())"
+            <button class="el-card" draggable="true" data-etype="container" data-cols="{{ $cols }}"
+                    x-show="!q || '{{ strtolower($label) }}'.includes(q.toLowerCase())"
                     wire:click="addContainer({{ $cols }})">
               <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/>@for ($i = 1; $i < $cols; $i++)<line x1="{{ 3 + 18 * $i / $cols }}" y1="5" x2="{{ 3 + 18 * $i / $cols }}" y2="19"/>@endfor</svg>
               <span>{{ $label }}</span>
@@ -217,7 +218,7 @@ body{overflow:hidden}
 
         @if (count($rendered['roots']))
           <div class="addgap" style="height:22px">
-            <button data-tree title="Add section at end" wire:click="openLibrary">
+            <button data-tree title="Add section at end" wire:click="openLibrary({{ end($rendered['roots'])['id'] }})">
               <svg class="ic" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
@@ -234,7 +235,9 @@ body{overflow:hidden}
 
         document.addEventListener('dragstart', e => {
           const card = e.target.closest('.el-card[data-etype]');
-          if (card) e.dataTransfer.setData('text/plain', 'buildr:' + card.dataset.etype);
+          if (!card) return;
+          const payload = card.dataset.etype + (card.dataset.cols ? ':' + card.dataset.cols : '');
+          e.dataTransfer.setData('text/plain', 'buildr:' + payload);
         });
 
         document.addEventListener('dragover', e => {
@@ -255,10 +258,10 @@ body{overflow:hidden}
           const payload = e.dataTransfer.getData('text/plain');
           if (!payload.startsWith('buildr:')) return;
           e.preventDefault();
-          const type = payload.slice(7);
+          const [type, cols] = payload.slice(7).split(':');
           const id = parseInt(target.dataset.bcolph || target.dataset.bcontainer);
           const comp = window.Livewire.all()[0];
-          if (comp) comp.$wire.call('dropElement', type, id);
+          if (comp) comp.$wire.call('dropElement', type, id, parseInt(cols || '1'));
         });
       })();
     </script>
@@ -270,24 +273,17 @@ body{overflow:hidden}
           <button wire:click="toggleNav"><svg class="ic" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="nav-list">
-          @foreach ($tree as $root)
-            <div class="nav-row {{ $selectedId === $root['id'] ? 'sel' : '' }}" wire:key="nav-{{ $root['id'] }}" wire:click="selectNode({{ $root['id'] }})">
-              {{ $root['label'] }}
-              <button class="eye" wire:click.stop="moveNode({{ $root['id'] }}, 'up')" title="Move up"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m18 15-6-6-6 6"/></svg></button>
-              <button class="eye" style="margin-left:0" wire:click.stop="moveNode({{ $root['id'] }}, 'down')" title="Move down"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m6 9 6 6 6-6"/></svg></button>
-              <button class="eye" style="margin-left:0" wire:click.stop="toggleVisible({{ $root['id'] }})" title="Toggle visibility">
-                <svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px">@if ($root['visible'])<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>@else<path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94"/><line x1="2" y1="2" x2="22" y2="22"/>@endif</svg>
+          @foreach ($tree as $row)
+            <div class="nav-row {{ $selectedId === $row['id'] ? 'sel' : '' }}"
+                 style="padding-left:{{ 8 + $row['depth'] * 16 }}px;{{ $row['depth'] > 0 ? 'font-weight:500' : '' }}"
+                 wire:key="nav-{{ $row['id'] }}" wire:click="selectNode({{ $row['id'] }})">
+              {{ $row['label'] }}
+              <button class="eye" wire:click.stop="moveNode({{ $row['id'] }}, 'up')" title="Move up"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m18 15-6-6-6 6"/></svg></button>
+              <button class="eye" style="margin-left:0" wire:click.stop="moveNode({{ $row['id'] }}, 'down')" title="Move down"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m6 9 6 6 6-6"/></svg></button>
+              <button class="eye" style="margin-left:0" wire:click.stop="toggleVisible({{ $row['id'] }})" title="Toggle visibility">
+                <svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px">@if ($row['visible'])<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>@else<path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94"/><line x1="2" y1="2" x2="22" y2="22"/>@endif</svg>
               </button>
             </div>
-            @foreach ($root['children'] as $child)
-              <div class="nav-row {{ $selectedId === $child['id'] ? 'sel' : '' }}" style="padding-left:26px;font-weight:500"
-                   wire:key="nav-{{ $child['id'] }}" wire:click="selectNode({{ $child['id'] }})">
-                {{ $child['label'] }}
-                <button class="eye" wire:click.stop="toggleVisible({{ $child['id'] }})" title="Toggle visibility">
-                  <svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px">@if ($child['visible'])<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>@else<path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94"/><line x1="2" y1="2" x2="22" y2="22"/>@endif</svg>
-                </button>
-              </div>
-            @endforeach
           @endforeach
         </div>
       </div>

@@ -45,12 +45,12 @@ class EditorTreeTest extends TestCase
         $page = Page::create(['title' => 'New', 'slug' => 'new']);
 
         $component = Livewire::test(Editor::class, ['page' => $page])
-            ->call('addContainer', 1)
-            ->call('addContainer', 2);
+            ->call('addContainer', 1);
 
         $first = $page->rootNodes()->orderBy('sort')->first();
 
-        // "+" gap at very top of the page
+        // page-level inserts go through the "+" gaps (openLibrary sets the spot)
+        $component->call('openLibrary', $first->id)->call('addContainer', 2);
         $component->call('openLibrary', 0)->call('addContainer', 3);
 
         $widthCounts = $page->rootNodes()->orderBy('sort')->get()
@@ -64,8 +64,9 @@ class EditorTreeTest extends TestCase
         $page = Page::create(['title' => 'New', 'slug' => 'new']);
 
         $component = Livewire::test(Editor::class, ['page' => $page])
-            ->call('addContainer', 1)
-            ->call('addContainer', 2);
+            ->call('addContainer', 1);
+        $a = $page->rootNodes()->first()->id;
+        $component->call('openLibrary', $a)->call('addContainer', 2);
 
         [$a, $b] = $page->rootNodes()->orderBy('sort')->pluck('id')->all();
 
@@ -125,16 +126,50 @@ class EditorTreeTest extends TestCase
         $page = Page::create(['title' => 'New', 'slug' => 'new']);
 
         $component = Livewire::test(Editor::class, ['page' => $page])
-            ->call('addContainer', 1)
-            ->call('addContainer', 2);
-
-        $first = $page->rootNodes()->orderBy('sort')->first();
+            ->call('addContainer', 1);
+        $first = $page->rootNodes()->first();
+        $component->call('openLibrary', $first->id)->call('addContainer', 2);
 
         // drop onto the FIRST container even though the second is selected
         $component->call('dropElement', 'button', $first->id);
 
         $button = $page->nodes()->where('type', 'button')->first();
         $this->assertSame($first->id, $button->parent_id);
+    }
+
+    public function test_container_selected_nests_new_container_inside(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)      // root, auto-selected
+            ->call('addContainer', 2);     // nests inside it
+
+        $root = $page->rootNodes()->first();
+        $this->assertSame(1, $page->rootNodes()->count());
+
+        $inner = $root->children()->first();
+        $this->assertSame('container', $inner->type);
+        $this->assertSame([50, 50], $inner->setting('content', 'widths'));
+    }
+
+    public function test_drop_container_card_nests_with_columns(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1);
+
+        $root = $page->rootNodes()->first();
+        $component->call('dropElement', 'container', $root->id, 3);
+
+        $inner = $root->children()->first();
+        $this->assertSame('container', $inner->type);
+        $this->assertSame([33, 33, 33], $inner->setting('content', 'widths'));
+
+        // nested containers render as drop targets in the editor
+        $html = collect(app(PageRenderer::class)->renderEditor($page->fresh())['roots'])->pluck('html')->implode('');
+        $this->assertSame(2, substr_count($html, 'data-bcontainer'));
     }
 
     public function test_editor_render_tags_children_for_selection(): void
