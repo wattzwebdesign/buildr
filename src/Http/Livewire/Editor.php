@@ -562,7 +562,9 @@ class Editor extends Component
             ],
             'toggle' => (bool) $value,
             'columns' => is_array($value) && $value !== [] ? array_values($value) : [100],
-            default => $value,
+            // scalar field types (text, select, color, …) must never hold
+            // arrays — discard malformed/legacy-shaped stored values
+            default => is_array($value) ? null : $value,
         };
     }
 
