@@ -300,12 +300,15 @@ textarea.in{resize:vertical;line-height:1.5}
 .devices button.on{background:var(--chrome-700);color:var(--accent)}
 .canvas-bar .zoom{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--muted)}
 
-.canvas-scroll{flex:1;overflow:auto;padding:26px;display:flex;justify-content:center}
+.canvas-scroll{flex:1;overflow:auto;padding:0;display:flex;justify-content:center}
 .page-frame{
-  width:100%;max-width:1160px;background:#fff;border-radius:10px;overflow:hidden;
-  box-shadow:var(--frame-shadow);transition:max-width .35s ease;
-  container-type:inline-size;height:max-content;
+  width:100%;max-width:none;background:#fff;overflow:hidden;
+  transition:max-width .35s ease;
+  container-type:inline-size;height:max-content;min-height:100%;
 }
+/* tablet/mobile previews float as device frames on the backdrop */
+.canvas.dev-tablet .canvas-scroll,.canvas.dev-mobile .canvas-scroll{padding:26px}
+.canvas.dev-tablet .page-frame,.canvas.dev-mobile .page-frame{border-radius:10px;box-shadow:var(--frame-shadow);min-height:0}
 .canvas.dev-tablet .page-frame{max-width:768px}
 .canvas.dev-mobile .page-frame{max-width:392px}
 

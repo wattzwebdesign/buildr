@@ -22,6 +22,21 @@ class Button extends Element
         ];
     }
 
+    public function css(string $selector): array
+    {
+        $full = (bool) $this->node->setting('content', 'full_width');
+
+        return [
+            $selector => [
+                'display' => 'inline-block',
+                'width' => $full ? '100%' : 'max-content',
+                'justify-self' => $full ? 'stretch' : 'start',
+                'text-decoration' => 'none',
+                'text-align' => 'center',
+            ],
+        ];
+    }
+
     public static function styleFields(): array
     {
         return [
