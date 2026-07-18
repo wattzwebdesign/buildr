@@ -106,6 +106,37 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('data-bhidden', $html);
     }
 
+    public function test_empty_container_shows_column_placeholders_in_editor_only(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        Livewire::test(Editor::class, ['page' => $page])->call('addContainer', 2);
+
+        $editorHtml = collect(app(PageRenderer::class)->renderEditor($page->fresh())['roots'])
+            ->pluck('html')->implode('');
+        $this->assertSame(2, substr_count($editorHtml, 'data-bcolph'));
+
+        $publicHtml = app(PageRenderer::class)->render($page->fresh())['html'];
+        $this->assertStringNotContainsString('bcol-ph', $publicHtml);
+    }
+
+    public function test_drop_element_lands_in_target_container(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addContainer', 2);
+
+        $first = $page->rootNodes()->orderBy('sort')->first();
+
+        // drop onto the FIRST container even though the second is selected
+        $component->call('dropElement', 'button', $first->id);
+
+        $button = $page->nodes()->where('type', 'button')->first();
+        $this->assertSame($first->id, $button->parent_id);
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

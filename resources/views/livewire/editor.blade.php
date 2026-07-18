@@ -16,6 +16,13 @@ body{overflow:hidden}
 [data-bnode]:not(section){cursor:pointer}
 .page-frame [data-bnode]:hover{outline:1px dashed rgba(255,178,0,.65);outline-offset:2px}
 [data-bhidden]{opacity:.35}
+.bcol-ph{
+  border:1.5px dashed rgba(150,150,160,.5);border-radius:8px;min-height:110px;
+  display:grid;place-items:center;font-family:Archivo,sans-serif;font-size:12px;
+  color:#8b8f98;cursor:pointer;transition:.15s;margin:6px 0;
+}
+.bcol-ph:hover,.bcol-ph.drop-hot{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.06)}
+[data-bcontainer].drop-hot{outline:2px dashed var(--accent);outline-offset:-2px}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
@@ -65,7 +72,8 @@ body{overflow:hidden}
         <div class="ctl-group"><span>Elements</span></div>
         <div class="lib-cards">
           @foreach ($library->get('elements', []) as $item)
-            <button class="el-card" x-show="!q || '{{ strtolower($item['label']) }}'.includes(q.toLowerCase())"
+            <button class="el-card" draggable="true" data-etype="{{ $item['key'] }}"
+                    x-show="!q || '{{ strtolower($item['label']) }}'.includes(q.toLowerCase())"
                     wire:click="addElement('{{ $item['key'] }}')">
               <svg class="ic" viewBox="0 0 24 24">{!! $icon($item['icon']) !!}</svg>
               <span>{{ $item['label'] }}</span>
@@ -89,7 +97,7 @@ body{overflow:hidden}
 
         <div class="fld-hint" style="margin-top:14px">
           Containers insert {{ $insertAfter !== null ? 'at the spot you picked' : 'at the end of the page' }}.
-          Elements drop into the selected container.
+          Elements: click to add to the selected container, or <b>drag onto any column</b> in the canvas.
         </div>
       </div>
     @else
@@ -173,6 +181,8 @@ body{overflow:hidden}
            x-data
            @click.prevent="
              const btn = $event.target.closest('[data-tree]'); if (btn) return;
+             const ph = $event.target.closest('[data-bcolph]');
+             if (ph) { $wire.openLibraryFor(parseInt(ph.dataset.bcolph)); return; }
              const n = $event.target.closest('[data-bnode]');
              if (n && !n.closest('.sec-tools')) { $wire.selectNode(parseInt(n.dataset.bnode)); return; }
              const s = $event.target.closest('.pv-sec');
@@ -214,6 +224,44 @@ body{overflow:hidden}
         @endif
       </div>
     </div>
+
+    <script data-navigate-once>
+      (() => {
+        if (window.__buildrDnd) return;
+        window.__buildrDnd = true;
+        const hot = (el, on) => el && el.classList.toggle('drop-hot', on);
+        let current = null;
+
+        document.addEventListener('dragstart', e => {
+          const card = e.target.closest('.el-card[data-etype]');
+          if (card) e.dataTransfer.setData('text/plain', 'buildr:' + card.dataset.etype);
+        });
+
+        document.addEventListener('dragover', e => {
+          const target = e.target.closest('[data-bcolph], [data-bcontainer]');
+          if (!target) return;
+          e.preventDefault();
+          if (current !== target) { hot(current, false); current = target; hot(current, true); }
+        });
+
+        document.addEventListener('dragleave', e => {
+          if (current && !current.contains(e.relatedTarget)) { hot(current, false); current = null; }
+        });
+
+        document.addEventListener('drop', e => {
+          const target = e.target.closest('[data-bcolph], [data-bcontainer]');
+          hot(current, false); current = null;
+          if (!target) return;
+          const payload = e.dataTransfer.getData('text/plain');
+          if (!payload.startsWith('buildr:')) return;
+          e.preventDefault();
+          const type = payload.slice(7);
+          const id = parseInt(target.dataset.bcolph || target.dataset.bcontainer);
+          const comp = window.Livewire.all()[0];
+          if (comp) comp.call('dropElement', type, id);
+        });
+      })();
+    </script>
 
     <!-- NAVIGATOR -->
     @if ($showNav)

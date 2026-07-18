@@ -84,6 +84,32 @@ class Editor extends Component
         $this->insertAfter = null;
     }
 
+    /** Clicking an empty column: target that container, open the library. */
+    public function openLibraryFor(int $containerId): void
+    {
+        $node = $this->page->nodes()->whereKey($containerId)->first();
+        if (! $node || $node->type !== 'container') {
+            return;
+        }
+
+        $this->selectedId = $containerId;
+        $this->loadSettings();
+        $this->view = 'library';
+        $this->insertAfter = null;
+    }
+
+    /** Drag-and-drop from the library onto a container or column. */
+    public function dropElement(string $type, int $containerId): void
+    {
+        $container = $this->page->nodes()->whereKey($containerId)->first();
+        if (! $container || $container->type !== 'container') {
+            return;
+        }
+
+        $this->selectedId = $containerId;
+        $this->addElement($type);
+    }
+
     public function toggleNav(): void
     {
         $this->showNav = ! $this->showNav;

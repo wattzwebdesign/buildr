@@ -111,10 +111,21 @@ class PageRenderer
         }
 
         if ($this->editorMode) {
-            $attrs = 'data-bnode="'.$node->id.'"'.($node->visible ? '' : ' data-bhidden');
+            $attrs = 'data-bnode="'.$node->id.'"';
+            if ($node->type === 'container') {
+                $attrs .= ' data-bcontainer="'.$node->id.'"';
+            }
+            if (! $node->visible) {
+                $attrs .= ' data-bhidden';
+            }
             $html = preg_replace('/<([a-zA-Z][a-zA-Z0-9-]*)/', '<$1 '.$attrs.' ', $html, 1);
         }
 
         return $html;
+    }
+
+    public function isEditor(): bool
+    {
+        return $this->editorMode;
     }
 }
