@@ -137,17 +137,27 @@ body{overflow:hidden}
       </div>
     @endif
 
+    @php
+        $isDirty = ! $page->published_at || $page->updated_at->gt($page->published_at);
+    @endphp
     <div class="panel-foot">
       <button class="pf-btn {{ $showNav ? 'on' : '' }}" wire:click="toggleNav" title="Navigator" style="display:grid;place-items:center">
         <svg class="ic" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
       <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--chrome-muted);padding:0 8px">
-        <span wire:loading.remove>{{ $page->isPublished() ? 'PUBLISHED' : 'DRAFT' }}</span>
+        <span wire:loading.remove>
+          @if (! $page->isPublished()) DRAFT
+          @elseif ($isDirty) UNPUBLISHED CHANGES
+          @else PUBLISHED
+          @endif
+        </span>
         <span wire:loading style="color:var(--accent)">SAVING…</span>
       </span>
-      <button class="publish" wire:click="publish" style="margin-left:auto">
+      <button class="publish {{ $isDirty ? 'dirty' : '' }}" wire:click="publish" style="margin-left:auto"
+              @if (! $isDirty && $page->isPublished()) disabled @endif>
         <span wire:loading.remove wire:target="publish">{{ $page->isPublished() ? 'Update' : 'Publish' }}</span>
         <span wire:loading wire:target="publish">Saving…</span>
+        <span class="dot"></span>
       </button>
     </div>
   </aside>
