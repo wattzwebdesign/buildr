@@ -39,6 +39,7 @@ class Editor extends Component
     {
         $this->selectedId = $id;
         $this->tab = 'content';
+        $this->view = 'edit';
         $this->loadSettings();
     }
 
@@ -59,6 +60,219 @@ class Editor extends Component
     public function publish(): void
     {
         $this->page->update(['published_at' => now()]);
+    }
+
+    /* ---------- library + tree operations ---------- */
+
+    /** 'edit' or 'library' (the sidebar block library). */
+    public string $view = 'edit';
+
+    /** Root id to insert after; 0 = start of page; null = append at end. */
+    public ?int $insertAfter = null;
+
+    public bool $showNav = false;
+
+    public function openLibrary(?int $afterRootId = null): void
+    {
+        $this->view = 'library';
+        $this->insertAfter = $afterRootId;
+    }
+
+    public function closeLibrary(): void
+    {
+        $this->view = 'edit';
+        $this->insertAfter = null;
+    }
+
+    public function toggleNav(): void
+    {
+        $this->showNav = ! $this->showNav;
+    }
+
+    public function addContainer(int $cols): void
+    {
+        $widths = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]][$cols] ?? [100];
+
+        $sort = $this->insertSort();
+        $node = $this->page->nodes()->create([
+            'type' => 'container',
+            'sort' => $sort,
+            'data' => ['content' => ['widths' => $widths] + $this->schemaDefaults('container')],
+        ]);
+
+        $this->resequence(null);
+        $this->page->touch();
+        $this->selectNode($node->id);
+    }
+
+    public function addElement(string $type): void
+    {
+        $registry = app(ElementRegistry::class);
+        if (! $registry->has($type)) {
+            return;
+        }
+
+        if ($type === 'container') {
+            $this->addContainer(1);
+
+            return;
+        }
+
+        // Elements live inside containers: use the selected container, the
+        // selected element's parent, or a fresh container at the page end.
+        $current = $this->node();
+        if ($current && $current->type === 'container') {
+            $parent = $current;
+            $sort = $parent->children()->count();
+        } elseif ($current && $current->parent_id) {
+            $parent = $current->parent;
+            $sort = $current->sort + 1;
+        } else {
+            $parent = $this->page->nodes()->create([
+                'type' => 'container',
+                'sort' => ($this->page->rootNodes()->max('sort') ?? -1) + 1,
+                'data' => ['content' => $this->schemaDefaults('container')],
+            ]);
+            $sort = 0;
+        }
+
+        $node = $this->page->nodes()->create([
+            'type' => $type,
+            'parent_id' => $parent->id,
+            'sort' => $sort,
+            'data' => ['content' => $this->schemaDefaults($type)],
+        ]);
+
+        $this->resequence($parent->id);
+        $this->page->touch();
+        $this->selectNode($node->id);
+    }
+
+    public function moveNode(int $id, string $dir): void
+    {
+        $node = $this->page->nodes()->whereKey($id)->first();
+        if (! $node) {
+            return;
+        }
+
+        $siblings = $this->page->nodes()
+            ->where('parent_id', $node->parent_id)
+            ->orderBy('sort')->get()->values();
+
+        $index = $siblings->search(fn ($n) => $n->id === $node->id);
+        $swap = $dir === 'up' ? $index - 1 : $index + 1;
+
+        if ($swap < 0 || $swap >= $siblings->count()) {
+            return;
+        }
+
+        $other = $siblings[$swap];
+        [$a, $b] = [$node->sort, $other->sort];
+        $node->update(['sort' => $b]);
+        $other->update(['sort' => $a]);
+        $this->page->touch();
+    }
+
+    public function duplicateNode(int $id): void
+    {
+        $node = $this->page->nodes()->whereKey($id)->first();
+        if (! $node) {
+            return;
+        }
+
+        $this->page->nodes()
+            ->where('parent_id', $node->parent_id)
+            ->where('sort', '>', $node->sort)
+            ->increment('sort');
+
+        $copy = $this->copyNode($node, $node->parent_id, $node->sort + 1);
+        $this->page->touch();
+        $this->selectNode($copy->id);
+    }
+
+    public function deleteNode(int $id): void
+    {
+        $node = $this->page->nodes()->whereKey($id)->first();
+        if (! $node) {
+            return;
+        }
+
+        $parentId = $node->parent_id;
+        $node->children()->get()->each(fn ($c) => $c->delete());
+        $node->delete();
+        $this->resequence($parentId);
+        $this->page->touch();
+
+        if ($this->selectedId === $id || ! $this->node()) {
+            $fallback = $parentId ?: $this->page->rootNodes()->first()?->id;
+            $fallback ? $this->selectNode($fallback) : $this->clearSelection();
+        }
+    }
+
+    public function toggleVisible(int $id): void
+    {
+        $node = $this->page->nodes()->whereKey($id)->first();
+        $node?->update(['visible' => ! $node->visible]);
+        $this->page->touch();
+    }
+
+    private function clearSelection(): void
+    {
+        $this->selectedId = null;
+        $this->settings = ['content' => [], 'style' => [], 'advanced' => []];
+    }
+
+    private function insertSort(): int
+    {
+        if ($this->insertAfter === null) {
+            return ($this->page->rootNodes()->max('sort') ?? -1) + 1;
+        }
+
+        if ($this->insertAfter === 0) {
+            $this->page->rootNodes()->increment('sort');
+
+            return 0;
+        }
+
+        $after = $this->page->rootNodes()->whereKey($this->insertAfter)->first();
+        $sort = ($after?->sort ?? -1) + 1;
+        $this->page->rootNodes()->where('sort', '>=', $sort)->increment('sort');
+
+        return $sort;
+    }
+
+    private function schemaDefaults(string $type): array
+    {
+        $defaults = [];
+        foreach (app(ElementRegistry::class)->get($type)::contentFields() as $field) {
+            if ($field->default !== null) {
+                $defaults[$field->key] = $field->default;
+            }
+        }
+
+        return $defaults;
+    }
+
+    private function copyNode(PageNode $node, ?int $parentId, int $sort): PageNode
+    {
+        $copy = $node->replicate();
+        $copy->parent_id = $parentId;
+        $copy->sort = $sort;
+        $copy->save();
+
+        foreach ($node->children as $i => $child) {
+            $this->copyNode($child, $copy->id, $i);
+        }
+
+        return $copy;
+    }
+
+    private function resequence(?int $parentId): void
+    {
+        $this->page->nodes()
+            ->where('parent_id', $parentId)
+            ->orderBy('sort')->get()
+            ->each(fn ($n, $i) => $n->sort === $i || $n->update(['sort' => $i]));
     }
 
     /** Any panel edit: persist the edited tab's settings into the node. */
@@ -200,10 +414,28 @@ class Editor extends Component
         $node = $this->node();
         $schema = $node ? $this->elementClass($node)::schema() : null;
 
+        $registry = app(ElementRegistry::class);
+        $library = collect($registry->schemas())->groupBy(fn ($s) => $s['group']);
+
+        $tree = $this->page->nodes()->whereNull('parent_id')->with('children')->orderBy('sort')->get()
+            ->map(fn ($root) => [
+                'id' => $root->id,
+                'label' => $registry->get($root->type)::label(),
+                'visible' => $root->visible,
+                'children' => $root->children->map(fn ($c) => [
+                    'id' => $c->id,
+                    'label' => $registry->get($c->type)::label(),
+                    'visible' => $c->visible,
+                ])->all(),
+            ]);
+
         return view('buildr::livewire.editor', [
             'rendered' => $rendered,
             'schema' => $schema,
             'fields' => $schema ? $schema['tabs'][$this->tab] : [],
+            'library' => $library,
+            'tree' => $tree,
+            'isChild' => (bool) $node?->parent_id,
         ])->title("Buildr — {$this->page->title}");
     }
 }

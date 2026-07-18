@@ -54,9 +54,13 @@ class PageRenderer
      *
      * @return array{roots: array<int, array{id: int, type: string, label: string, html: string}>, css: string}
      */
+    /** When true, rendered nodes are tagged with data-bnode for canvas selection. */
+    private bool $editorMode = false;
+
     public function renderEditor(Page $page): array
     {
-        $page->load(['nodes' => fn ($q) => $q->where('visible', true)]);
+        $this->editorMode = true;
+        $page->load('nodes');
 
         $compiler = new StyleCompiler(config('buildr.breakpoints', ['tablet' => 1024, 'mobile' => 640]));
 
@@ -77,7 +81,11 @@ class PageRenderer
     {
         $html = '';
 
-        foreach ($parent->children()->where('visible', true)->get() as $child) {
+        $children = $parent->children()
+            ->when(! $this->editorMode, fn ($q) => $q->where('visible', true))
+            ->get();
+
+        foreach ($children as $child) {
             $html .= $this->renderNode($child, $this->activeCompiler);
         }
 
@@ -97,9 +105,16 @@ class PageRenderer
         $this->activeCompiler = $compiler;
 
         try {
-            return $element->render($this);
+            $html = $element->render($this);
         } finally {
             $this->activeCompiler = $previous;
         }
+
+        if ($this->editorMode) {
+            $attrs = 'data-bnode="'.$node->id.'"'.($node->visible ? '' : ' data-bhidden');
+            $html = preg_replace('/<([a-zA-Z][a-zA-Z0-9-]*)/', '<$1 '.$attrs.' ', $html, 1);
+        }
+
+        return $html;
     }
 }
