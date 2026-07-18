@@ -69,6 +69,13 @@ class StyleCompiler
             $this->addSides($selector, $key, $advanced[$key] ?? null);
         }
 
+        // Align-self covers both axes' semantics: cross-axis in a flex
+        // column stack, inline-axis (justify-self) as a bare grid item.
+        if (! empty($advanced['align'])) {
+            $this->addValue($selector, 'align-self', $advanced['align']);
+            $this->addValue($selector, 'justify-self', $advanced['align']);
+        }
+
         foreach (['desktop', 'tablet', 'mobile'] as $device) {
             if ($advanced["hide_{$device}"] ?? false) {
                 $this->rules[$device][$selector]['display'] = 'none';

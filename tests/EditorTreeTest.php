@@ -266,6 +266,37 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('padding-left:10px', $css);
     }
 
+    public function test_flex_alignment_controls_compile(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 2);
+        $container = $page->rootNodes()->first();
+
+        $component->call('dropInto', 'heading', $container->id, 0)
+            ->call('selectNode', $container->id)
+            ->set('settings.content.col_halign', 'center')
+            ->set('settings.content.col_valign', 'space-between')
+            ->set('settings.content.element_gap.value', 20);
+
+        $result = app(PageRenderer::class)->render($page->fresh());
+
+        $this->assertStringContainsString('> .bcol{align-items:center;justify-content:space-between;gap:20px;}', $result['css']);
+        // single-child column keeps its wrapper so the flex rules apply
+        $this->assertStringContainsString('class="bcol"', $result['html']);
+
+        // element-level align-self
+        $heading = $page->nodes()->where('type', 'heading')->first();
+        Livewire::test(Editor::class, ['page' => $page->fresh()])
+            ->call('selectNode', $heading->id)
+            ->set('settings.advanced.align.desktop', 'center');
+
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $this->assertStringContainsString('align-self:center', $css);
+        $this->assertStringContainsString('justify-self:center', $css);
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

@@ -34,6 +34,20 @@ class Container extends Element
                 'center' => 'Center',
                 'end' => 'Bottom',
             ])->label('Vertical align')->default('stretch'),
+            Field::select('col_halign', [
+                '' => 'Default (stretch)',
+                'flex-start' => 'Left',
+                'center' => 'Center',
+                'flex-end' => 'Right',
+            ])->label('Align elements')->help('Horizontal alignment of stacked elements inside each column'),
+            Field::select('col_valign', [
+                '' => 'Default (top)',
+                'center' => 'Center',
+                'flex-end' => 'Bottom',
+                'space-between' => 'Space between',
+            ])->label('Distribute elements')->help('Vertical distribution of stacked elements inside each column'),
+            Field::unit('element_gap', ['px', 'em', 'rem'])->label('Element gap')
+                ->help('Space between stacked elements in a column (default 12px)'),
             Field::unit('min_height', ['px', 'vh'])->responsive(),
             Field::select('width_mode', ['boxed' => 'Boxed', 'full' => 'Full width'])->default('boxed'),
             Field::unit('max_width', ['px', '%'])->default(['value' => 1160, 'unit' => 'px']),
@@ -76,6 +90,18 @@ class Container extends Element
 
         if (($content['stack_mobile'] ?? true) && count($widths) > 1) {
             $rules['@mobile'][$selector] = ['grid-template-columns' => '1fr'];
+        }
+
+        // Flex controls for the column stacks (.bcol wrappers)
+        $stack = array_filter([
+            'align-items' => $content['col_halign'] ?? null,
+            'justify-content' => $content['col_valign'] ?? null,
+            'gap' => isset($content['element_gap']['value']) && $content['element_gap']['value'] !== '' && $content['element_gap']['value'] !== null
+                ? $this->unitValue($content['element_gap'])
+                : null,
+        ]);
+        if ($stack !== []) {
+            $rules["{$selector} > .bcol"] = $stack;
         }
 
         return $rules;

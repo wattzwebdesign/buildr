@@ -41,6 +41,13 @@ abstract class Element
     public static function advancedFields(): array
     {
         return [
+            Field::select('align', [
+                '' => 'Default',
+                'start' => 'Start',
+                'center' => 'Center',
+                'end' => 'End',
+                'stretch' => 'Stretch',
+            ])->label('Align self')->responsive(),
             Field::sides('margin')->responsive(),
             Field::sides('padding')->responsive(),
             Field::text('anchor_id')->label('Anchor ID'),
