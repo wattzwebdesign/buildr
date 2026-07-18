@@ -258,7 +258,7 @@ body{overflow:hidden}
           const type = payload.slice(7);
           const id = parseInt(target.dataset.bcolph || target.dataset.bcontainer);
           const comp = window.Livewire.all()[0];
-          if (comp) comp.call('dropElement', type, id);
+          if (comp) comp.$wire.call('dropElement', type, id);
         });
       })();
     </script>
