@@ -16,8 +16,15 @@ class Dashboard extends Component
 
     public function createPage(): void
     {
+        $this->validate(
+            ['newTitle' => 'required|string|max:255'],
+            ['newTitle.required' => 'Give the page a title first.'],
+        );
+
         $title = trim($this->newTitle);
         if ($title === '') {
+            $this->addError('newTitle', 'Give the page a title first.');
+
             return;
         }
 

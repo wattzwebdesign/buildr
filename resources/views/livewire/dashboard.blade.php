@@ -22,11 +22,17 @@
     <div class="main-head">
       <h1>Pages</h1>
       <span class="count">{{ $pages->count() }} {{ Str::plural('PAGE', $pages->count()) }}</span>
-      <form wire:submit="createPage" style="margin-left:auto;display:flex;gap:8px">
-        <input class="in" style="width:200px" placeholder="New page title…" wire:model="newTitle">
-        <button type="submit" class="btn-primary" style="margin-left:0">
-          <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Page
-        </button>
+      <form wire:submit="createPage" style="margin-left:auto;display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <div style="display:flex;gap:8px">
+          <input class="in" style="width:210px @error('newTitle');border-color:var(--danger)@enderror" placeholder="New page title…" wire:model="newTitle">
+          <button type="submit" class="btn-primary" style="margin-left:0">
+            <span wire:loading.remove wire:target="createPage" style="display:flex;align-items:center;gap:7px">
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Page
+            </span>
+            <span wire:loading wire:target="createPage">Creating…</span>
+          </button>
+        </div>
+        @error('newTitle')<span style="font-size:11px;color:var(--danger)">{{ $message }}</span>@enderror
       </form>
     </div>
 
