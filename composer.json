@@ -1,0 +1,40 @@
+{
+    "name": "buildr/buildr",
+    "description": "A lean, code-first page builder for Laravel. Containers, elements, and per-site coded blocks — clients edit content, the DOM stays clean.",
+    "type": "library",
+    "license": "proprietary",
+    "keywords": ["laravel", "page-builder", "cms", "tailwind"],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/database": "^11.0 || ^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0 || ^11.0 || ^12.0",
+        "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Buildr\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Buildr\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Buildr\\BuildrServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}
