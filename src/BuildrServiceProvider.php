@@ -39,6 +39,13 @@ class BuildrServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'buildr');
 
+        if ($prefix = config('buildr.route')) {
+            \Illuminate\Support\Facades\Route::middleware(config('buildr.middleware', ['web']))
+                ->get(rtrim($prefix, '/').'/{slug?}', \Buildr\Http\PageController::class)
+                ->where('slug', '[a-z0-9\-\/]*')
+                ->name('buildr.page');
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/buildr.php' => config_path('buildr.php'),
