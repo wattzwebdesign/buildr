@@ -98,6 +98,25 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('padding-bottom:3em', $css);
     }
 
+    public function test_container_border_compiles_to_valid_css(): void
+    {
+        $page = $this->pageWithHero();
+        $container = $page->nodes()->where('type', 'container')->first();
+
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $container->id)
+            ->set('settings.style.border_style', 'solid')
+            ->set('settings.style.border_color', '#000000')
+            ->set('settings.style.border_width.top.value', 5);
+
+        $css = app(\Buildr\Render\PageRenderer::class)->render($page->fresh())['css'];
+
+        $this->assertStringContainsString('border-top-width:5px', $css);
+        $this->assertStringContainsString('border-style:solid', $css);
+        $this->assertStringContainsString('border-color:#000000', $css);
+        $this->assertStringNotContainsString('border-width-top', $css);
+    }
+
     public function test_container_width_presets(): void
     {
         $page = $this->pageWithHero();

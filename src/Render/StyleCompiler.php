@@ -150,12 +150,14 @@ class StyleCompiler
             foreach (['top', 'right', 'bottom', 'left'] as $side) {
                 $css = $this->toCss($sides[$side] ?? null);
                 if ($css !== null) {
-                    $sideProp = $prop === 'border-radius'
-                        ? 'border-'.match ($side) {
+                    $sideProp = match ($prop) {
+                        'border-radius' => 'border-'.match ($side) {
                             'top' => 'top-left', 'right' => 'top-right',
                             'bottom' => 'bottom-right', 'left' => 'bottom-left',
-                        }.'-radius'
-                        : "{$prop}-{$side}";
+                        }.'-radius',
+                        'border-width' => "border-{$side}-width",
+                        default => "{$prop}-{$side}",
+                    };
                     $this->rules[$device][$selector][$sideProp] = $css;
                 }
             }

@@ -64,8 +64,8 @@
 
     @case('color')
       <div class="colorrow">
-        <input type="color" class="cp" wire:model.change="{{ $base }}">
-        <input class="in hex mono" placeholder="#000000" wire:model.blur="{{ $base }}">
+        <input type="color" class="cp" wire:model.live="{{ $base }}">
+        <input class="in hex mono" placeholder="none" wire:model.blur="{{ $base }}">
       </div>
       @break
 
