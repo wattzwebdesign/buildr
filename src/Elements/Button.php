@@ -18,23 +18,39 @@ class Button extends Element
         return [
             Field::text('label')->required()->default('Click Here'),
             Field::link('link')->default(['url' => '#']),
-            Field::toggle('full_width')->responsive(),
+            Field::select('align', [
+                'left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'full' => 'Full width',
+            ])->default('left')->responsive()
+                ->buttons(['left' => 'h-start', 'center' => 'h-center', 'right' => 'h-end', 'full' => 'h-stretch']),
         ];
     }
 
     public function css(string $selector): array
     {
-        $stored = $this->node->setting('content', 'full_width');
-        $per = is_array($stored) ? $stored : ['desktop' => $stored];
-        $desktopFull = (bool) ($per['desktop'] ?? false);
+        $align = $this->node->setting('content', 'align');
+        $per = is_array($align) ? $align : ['desktop' => $align];
 
-        $size = fn (bool $full) => [
-            'width' => $full ? '100%' : 'max-content',
-            'justify-self' => $full ? 'stretch' : 'start',
-        ];
+        if (empty($per['desktop'])) {
+            // legacy nodes stored a full_width toggle instead of align
+            $legacy = $this->node->setting('content', 'full_width');
+            $legacyFull = is_array($legacy) ? (bool) ($legacy['desktop'] ?? false) : (bool) $legacy;
+            $per['desktop'] = $legacyFull ? 'full' : 'left';
+        }
+
+        $decl = function (string $a): array {
+            $pos = match ($a) {
+                'center' => 'center', 'right' => 'end', 'full' => 'stretch', default => 'start',
+            };
+
+            return [
+                'width' => $a === 'full' ? '100%' : 'max-content',
+                'justify-self' => $pos,
+                'align-self' => $pos,
+            ];
+        };
 
         $rules = [
-            $selector => $size($desktopFull) + [
+            $selector => $decl($per['desktop']) + [
                 'display' => 'inline-block',
                 'text-decoration' => 'none',
                 'text-align' => 'center',
@@ -42,8 +58,8 @@ class Button extends Element
         ];
 
         foreach (['tablet', 'mobile'] as $device) {
-            if (isset($per[$device]) && (bool) $per[$device] !== $desktopFull) {
-                $rules['@'.$device][$selector] = $size((bool) $per[$device]);
+            if (! empty($per[$device]) && $per[$device] !== $per['desktop']) {
+                $rules['@'.$device][$selector] = $decl($per[$device]);
             }
         }
 

@@ -360,10 +360,13 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('width:max-content', $css);
         $this->assertStringNotContainsString('width:100%', $css);
 
-        // mobile-only full width emits a media-query override
-        $component->call('setDevice', 'mobile')->set('settings.content.full_width.mobile', true);
+        // center on desktop, full width on mobile — via the align icon row
+        $component->set('settings.content.align.desktop', 'center')
+            ->call('setDevice', 'mobile')
+            ->set('settings.content.align.mobile', 'full');
         $css = app(PageRenderer::class)->render($page->fresh())['css'];
-        $this->assertStringContainsString('width:max-content', $css);
+        $this->assertStringContainsString('justify-self:center', $css);
+        $this->assertStringContainsString('align-self:center', $css);
         $this->assertMatchesRegularExpression('/@media\(max-width:640px\).*width:100%/s', $css);
     }
 
