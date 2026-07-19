@@ -138,6 +138,7 @@ class PageRenderer
 
         if ($this->editorMode) {
             $attrs = 'data-bnode="'.$node->id.'"';
+            $attrs .= ' data-blabel="'.e($this->elements->get($node->type)::label()).'"';
             if ($node->type === 'container') {
                 $attrs .= ' data-bcontainer="'.$node->id.'"';
             }

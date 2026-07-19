@@ -452,6 +452,40 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('box-shadow:0 6px 18px', $css);
     }
 
+    public function test_clipboard_copy_paste_and_style_ops(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'button');
+
+        $button = $page->nodes()->where('type', 'button')->first();
+        $component->call('selectNode', $button->id)
+            ->call('setTab', 'style')
+            ->set('settings.style.shadow', 'lg')
+            ->call('addElement', 'heading');
+        $heading = $page->nodes()->where('type', 'heading')->first();
+
+        // copy the styled button, paste after the heading
+        $component->call('copyToClipboard', $button->id)
+            ->call('pasteAfter', $heading->id);
+        $this->assertSame(2, $page->nodes()->where('type', 'button')->count());
+
+        // paste style onto the heading
+        $component->call('pasteStyleTo', $heading->id);
+        $this->assertSame('lg', $heading->fresh()->setting('style', 'shadow'));
+
+        // reset style clears it
+        $component->call('resetStyle', $heading->id);
+        $this->assertSame([], $heading->fresh()->settings('style'));
+
+        // pasting a container into its own subtree is blocked
+        $root = $page->rootNodes()->first();
+        $component->call('copyToClipboard', $root->id)->call('pasteAfter', $button->id);
+        $this->assertSame(1, $page->rootNodes()->count());
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

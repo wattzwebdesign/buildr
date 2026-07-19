@@ -549,6 +549,72 @@ class Editor extends Component
         }
     }
 
+    /* ---------- clipboard (right-click menu) ---------- */
+
+    public ?int $clipboardId = null;
+
+    public function copyToClipboard(int $id): void
+    {
+        if ($this->page->nodes()->whereKey($id)->exists()) {
+            $this->clipboardId = $id;
+        }
+    }
+
+    /** Paste the copied subtree as a sibling right after the target node. */
+    public function pasteAfter(int $targetId): void
+    {
+        $clip = $this->clipboardId ? $this->page->nodes()->whereKey($this->clipboardId)->first() : null;
+        $target = $this->page->nodes()->whereKey($targetId)->first();
+
+        if (! $clip || ! $target || $this->containsNode($clip, $targetId)) {
+            return;
+        }
+
+        $this->page->nodes()->where('parent_id', $target->parent_id)
+            ->where('sort', '>', $target->sort)->increment('sort');
+
+        $copy = $this->copyNode($clip, $target->parent_id, $target->sort + 1);
+
+        $data = $copy->data ?? [];
+        $data['content']['_col'] = $target->data['content']['_col'] ?? 0;
+        $copy->update(['data' => $data]);
+
+        $this->resequence($target->parent_id);
+        $this->page->touch();
+        $this->selectNode($copy->id);
+    }
+
+    /** Apply the copied node's Style-tab settings to the target. */
+    public function pasteStyleTo(int $targetId): void
+    {
+        $clip = $this->clipboardId ? $this->page->nodes()->whereKey($this->clipboardId)->first() : null;
+        $target = $this->page->nodes()->whereKey($targetId)->first();
+
+        if (! $clip || ! $target) {
+            return;
+        }
+
+        $data = $target->data ?? [];
+        $data['style'] = $clip->data['style'] ?? [];
+        $target->update(['data' => $data]);
+        $this->page->touch();
+        $this->selectNode($target->id);
+    }
+
+    public function resetStyle(int $id): void
+    {
+        $node = $this->page->nodes()->whereKey($id)->first();
+        if (! $node) {
+            return;
+        }
+
+        $data = $node->data ?? [];
+        $data['style'] = [];
+        $node->update(['data' => $data]);
+        $this->page->touch();
+        $this->selectNode($id);
+    }
+
     public function toggleVisible(int $id): void
     {
         $node = $this->page->nodes()->whereKey($id)->first();

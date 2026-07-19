@@ -775,3 +775,18 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 .ipk-grid-lg{grid-template-columns:repeat(auto-fill,minmax(52px,1fr));max-height:none;overflow:visible;gap:6px}
 .ipk-grid-lg .ipk-item svg{width:24px;height:24px}
 .ipk-foot{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--panel-line)}
+
+/* right-click context menu */
+#bctx{
+  display:none;position:fixed;z-index:130;width:200px;padding:5px;
+  background:var(--chrome-800);border:1px solid var(--chrome-line);border-radius:11px;
+  box-shadow:var(--shadow-pop);
+}
+#bctx button{
+  display:block;width:100%;text-align:left;padding:8px 11px;border-radius:7px;
+  font-size:12.5px;font-weight:600;color:var(--chrome-ink);transition:.1s;
+}
+#bctx button:hover:not(:disabled){background:var(--chrome-700)}
+#bctx button:disabled{color:var(--chrome-muted);opacity:.55;cursor:default}
+#bctx button.danger{color:var(--danger)}
+#bctx hr{border:0;border-top:1px solid var(--chrome-line);margin:5px 6px}

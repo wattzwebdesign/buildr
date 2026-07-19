@@ -562,6 +562,65 @@ body{overflow:hidden}
 
         document.addEventListener('dragend', () => { clear(); drag = null; });
 
+        // ----- right-click context menu -----
+        const ctx = () => document.getElementById('bctx');
+        const hideCtx = () => { const m = ctx(); if (m) { m.style.display = 'none'; m.innerHTML = ''; } };
+
+        document.addEventListener('contextmenu', e => {
+          const el = e.target.closest('.page-frame [data-bnode]');
+          const sec = e.target.closest('.pv-sec');
+          if (!el && !sec) { hideCtx(); return; }
+          e.preventDefault();
+
+          const id = parseInt(el ? el.dataset.bnode : sec.dataset.root);
+          const label = el?.dataset.blabel || 'Section';
+          const w = wire();
+          const hasClip = !!w?.clipboardId;
+          w?.call('selectNode', id);
+
+          const item = (act, text, opts = {}) =>
+            `<button data-act="${act}" ${opts.disabled ? 'disabled' : ''} ${opts.danger ? 'class="danger"' : ''}>${text}</button>`;
+
+          const m = ctx();
+          m.innerHTML =
+            item('edit', `Edit ${label}`) +
+            item('duplicate', 'Duplicate') +
+            '<hr>' +
+            item('copy', 'Copy') +
+            item('paste', 'Paste', { disabled: !hasClip }) +
+            item('pastestyle', 'Paste Style', { disabled: !hasClip }) +
+            item('resetstyle', 'Reset Style') +
+            '<hr>' +
+            item('structure', 'Structure') +
+            '<hr>' +
+            item('delete', 'Delete', { danger: true });
+          m.dataset.node = id;
+          m.style.display = 'block';
+          const mw = 200, mh = m.offsetHeight || 320;
+          m.style.left = Math.min(e.clientX, window.innerWidth - mw - 12) + 'px';
+          m.style.top = Math.min(e.clientY, window.innerHeight - mh - 12) + 'px';
+        });
+
+        document.addEventListener('click', e => {
+          const btn = e.target.closest('#bctx button');
+          if (!btn) { hideCtx(); return; }
+          const id = parseInt(ctx().dataset.node);
+          const w = wire();
+          switch (btn.dataset.act) {
+            case 'edit': w?.call('selectNode', id); break;
+            case 'duplicate': w?.call('duplicateNode', id); break;
+            case 'copy': w?.call('copyToClipboard', id); break;
+            case 'paste': w?.call('pasteAfter', id); break;
+            case 'pastestyle': w?.call('pasteStyleTo', id); break;
+            case 'resetstyle': if (confirm('Reset all Style settings on this element?')) w?.call('resetStyle', id); break;
+            case 'structure': w?.call('toggleNav'); break;
+            case 'delete': if (confirm('Delete this element?')) w?.call('deleteNode', id); break;
+          }
+          hideCtx();
+        });
+        document.addEventListener('scroll', hideCtx, true);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtx(); });
+
         // Floating toolbar for child elements: drag handle / duplicate / delete.
         // Lazy lookups + delegation: the toolbar div renders after this script.
         const tools = () => document.getElementById('el-tools');
@@ -690,6 +749,9 @@ body{overflow:hidden}
         });
       })();
     </script>
+
+    <!-- right-click context menu (populated by JS) -->
+    <div id="bctx" x-cloak></div>
 
     <!-- floating element toolbar (positioned by JS on hover) -->
     <div id="el-tools">
