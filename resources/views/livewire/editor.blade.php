@@ -563,6 +563,7 @@ body{overflow:hidden}
         document.addEventListener('dragend', () => { clear(); drag = null; });
 
         // ----- right-click context menu -----
+        let ctxAt = 0;
         const ctx = () => document.getElementById('bctx');
         const hideCtx = () => { const m = ctx(); if (m) { m.style.display = 'none'; m.innerHTML = ''; } };
 
@@ -574,9 +575,8 @@ body{overflow:hidden}
 
           const id = parseInt(el ? el.dataset.bnode : sec.dataset.root);
           const label = el?.dataset.blabel || 'Section';
-          const w = wire();
-          const hasClip = !!w?.clipboardId;
-          w?.call('selectNode', id);
+          const hasClip = !!wire()?.clipboardId;
+          ctxAt = performance.now();
 
           const item = (act, text, opts = {}) =>
             `<button data-act="${act}" ${opts.disabled ? 'disabled' : ''} ${opts.danger ? 'class="danger"' : ''}>${text}</button>`;
@@ -603,7 +603,10 @@ body{overflow:hidden}
 
         document.addEventListener('click', e => {
           const btn = e.target.closest('#bctx button');
-          if (!btn) { hideCtx(); return; }
+          if (!btn) {
+            if (performance.now() - ctxAt < 200) return; // trailing click of the right-click itself
+            hideCtx(); return;
+          }
           const id = parseInt(ctx().dataset.node);
           const w = wire();
           switch (btn.dataset.act) {
@@ -750,8 +753,8 @@ body{overflow:hidden}
       })();
     </script>
 
-    <!-- right-click context menu (populated by JS) -->
-    <div id="bctx" x-cloak></div>
+    <!-- right-click context menu (populated by JS; outside Livewire's morph) -->
+    <div id="bctx" wire:ignore x-cloak></div>
 
     <!-- floating element toolbar (positioned by JS on hover) -->
     <div id="el-tools">
