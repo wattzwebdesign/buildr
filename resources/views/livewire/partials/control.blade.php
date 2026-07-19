@@ -4,6 +4,9 @@
     $responsive = $field['responsive'] ?? false;
     $base = "settings.{$tab}.{$key}".($responsive ? ".{$device}" : '');
     $units = $field['units'] ?? ['px'];
+    // Instant DOM mirroring is only safe when the field IS the element's
+    // entire visible text — composites (icon box etc.) would get wiped.
+    $mirrorSafe = in_array(($schema['key'] ?? '').':'.$key, ['heading:text', 'button:label', 'text:body'], true);
 @endphp
 
 <div class="fld" wire:key="fld-{{ $selectedId }}-{{ $tab }}-{{ $key }}-{{ $responsive ? $device : 'all' }}">
@@ -35,13 +38,13 @@
 
     @case('text')
       <input class="in" wire:model.live.debounce.400ms="{{ $base }}"
-             @if ($tab === 'content') data-mirror="{{ $key }}" data-mirror-mode="text" @endif>
+             @if ($tab === 'content' && $mirrorSafe) data-mirror="{{ $key }}" data-mirror-mode="text" @endif>
       @break
 
     @case('textarea')
     @case('richtext')
       <textarea class="in" rows="4" wire:model.live.debounce.400ms="{{ $base }}"
-                @if ($tab === 'content') data-mirror="{{ $key }}" data-mirror-mode="{{ $field['type'] === 'richtext' ? 'html' : 'text' }}" @endif></textarea>
+                @if ($tab === 'content' && $mirrorSafe) data-mirror="{{ $key }}" data-mirror-mode="{{ $field['type'] === 'richtext' ? 'html' : 'text' }}" @endif></textarea>
       @break
 
     @case('code')
