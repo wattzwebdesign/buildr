@@ -41,6 +41,13 @@ body{overflow:hidden}
 #el-tools svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #elt-drag{cursor:grab}
 .page-frame.child-hover .sec-tools{display:none}
+/* every container shows faint dashed bounds in the editor, Elementor-style */
+.page-frame [data-bcontainer]{outline:1px dashed rgba(150,153,163,.45);outline-offset:-2px}
+.page-frame [data-bcontainer]:hover{outline-color:rgba(255,178,0,.6)}
+#el-tools #elt-type{width:26px;height:24px;display:grid;place-items:center;background:rgba(0,0,0,.14);cursor:pointer}
+#el-tools #elt-type svg{display:none}
+#el-tools.is-container svg[data-t="container"]{display:block}
+#el-tools:not(.is-container) svg[data-t="element"]{display:block}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
@@ -358,6 +365,7 @@ body{overflow:hidden}
           pf?.classList.toggle('child-hover', !!el); // suppress section chip over children
           if (el && t) {
             toolsFor = parseInt(el.dataset.bnode);
+            t.classList.toggle('is-container', !!el.dataset.bcontainer);
             const r = el.getBoundingClientRect();
             t.style.left = Math.max(r.left, 60) + 'px';
             t.style.top = (r.top - 12) + 'px';
@@ -369,7 +377,9 @@ body{overflow:hidden}
         document.addEventListener('scroll', hideTools, true);
 
         document.addEventListener('click', e => {
-          if (e.target.closest('#elt-dup')) {
+          if (e.target.closest('#elt-type')) {
+            if (toolsFor) wire()?.call('selectNode', toolsFor);
+          } else if (e.target.closest('#elt-dup')) {
             if (toolsFor) wire()?.call('duplicateNode', toolsFor);
             hideTools();
           } else if (e.target.closest('#elt-del')) {
@@ -464,6 +474,10 @@ body{overflow:hidden}
 
     <!-- floating element toolbar (positioned by JS on hover) -->
     <div id="el-tools">
+      <span id="elt-type" title="Select">
+        <svg data-t="container" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+        <svg data-t="element" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+      </span>
       <button id="elt-drag" draggable="true" title="Drag to move">
         <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
       </button>

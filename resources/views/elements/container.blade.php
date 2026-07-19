@@ -11,7 +11,9 @@
 @endphp
 <{{ $htmlTag }} class="{{ $classes }}"@if($anchor) id="{{ $anchor }}"@endif>
 @foreach ($columns as $ci => $column)
-@if ($editor)
+@if ($column['sole_container'])
+{!! $column['html'] !!}
+@elseif ($editor)
 <div class="bcol" data-bcol="{{ $node->id }}:{{ $ci }}">{!! $column['html'] !!}<div class="bcol-ph {{ $column['count'] ? 'mini' : '' }}" data-bcolph="{{ $node->id }}:{{ $ci }}"><span>{{ $column['count'] ? '+' : '+ Drop an element here' }}</span></div></div>
 @elseif ($column['count'] > 1 || ($column['count'] === 1 && $hasStackStyles))
 <div class="bcol">{!! $column['html'] !!}</div>

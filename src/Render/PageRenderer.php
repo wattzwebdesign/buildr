@@ -87,7 +87,7 @@ class PageRenderer
     public function renderContainerColumns(PageNode $node, int $cols): array
     {
         $cols = max(1, $cols);
-        $columns = array_fill(0, $cols, ['html' => '', 'count' => 0]);
+        $columns = array_fill(0, $cols, ['html' => '', 'count' => 0, 'sole_container' => false]);
 
         $children = $node->children()
             ->when(! $this->editorMode, fn ($q) => $q->where('visible', true))
@@ -97,6 +97,7 @@ class PageRenderer
             $col = min((int) ($child->data['content']['_col'] ?? ($i % $cols)), $cols - 1);
             $columns[$col]['html'] .= $this->renderNode($child, $this->activeCompiler);
             $columns[$col]['count']++;
+            $columns[$col]['sole_container'] = $columns[$col]['count'] === 1 && $child->type === 'container';
         }
 
         return $columns;

@@ -81,10 +81,11 @@ class EditorTreeTest extends TestCase
         $copy = $page->rootNodes()->orderBy('sort')->get()->last();
         $this->assertSame(1, $copy->children()->count());
 
-        // delete removes the section and its children
+        // delete removes the section and its children; section b keeps its
+        // 2 auto column containers, the surviving copy keeps its heading
         $component->call('deleteNode', $a);
         $this->assertSame(2, $page->rootNodes()->count());
-        $this->assertSame(1, $page->nodes()->whereNotNull('parent_id')->count());
+        $this->assertSame(3, $page->nodes()->whereNotNull('parent_id')->count());
     }
 
     public function test_visibility_toggle_hides_from_public_render(): void
@@ -167,9 +168,29 @@ class EditorTreeTest extends TestCase
         $this->assertSame('container', $inner->type);
         $this->assertSame([33, 33, 33], $inner->setting('content', 'widths'));
 
-        // nested containers render as drop targets in the editor
+        // root + nested parent + its 3 auto-created column containers
         $html = collect(app(PageRenderer::class)->renderEditor($page->fresh())['roots'])->pluck('html')->implode('');
-        $this->assertSame(2, substr_count($html, 'data-bcontainer'));
+        $this->assertSame(5, substr_count($html, 'data-bcontainer'));
+    }
+
+    public function test_multi_column_container_creates_inner_column_containers(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        Livewire::test(Editor::class, ['page' => $page])->call('addContainer', 2);
+
+        $parent = $page->rootNodes()->first();
+        $columns = $parent->children()->orderBy('sort')->get();
+
+        $this->assertCount(2, $columns);
+        $this->assertSame(['container', 'container'], $columns->pluck('type')->all());
+        $this->assertSame([0, 1], $columns->map(fn ($c) => $c->data['content']['_col'])->all());
+
+        // each column is its own selectable container in the editor…
+        $html = collect(app(PageRenderer::class)->renderEditor($page->fresh())['roots'])->pluck('html')->implode('');
+        $this->assertSame(3, substr_count($html, 'data-bcontainer'));
+        // …rendered bare as the grid item — no .bcol wrapper around a column container
+        $this->assertSame(2, substr_count($html, 'Drop an element here'));
     }
 
     public function test_multiple_elements_stack_in_one_column(): void
@@ -179,17 +200,17 @@ class EditorTreeTest extends TestCase
         $component = Livewire::test(Editor::class, ['page' => $page])
             ->call('addContainer', 2);
 
-        $container = $page->rootNodes()->first();
+        $parent = $page->rootNodes()->first();
+        [$left, $right] = $parent->children()->orderBy('sort')->get();
 
-        // heading + text + button all into column 0; image into column 1
-        $component->call('dropInto', 'heading', $container->id, 0)
-            ->call('dropInto', 'text', $container->id, 0)
-            ->call('dropInto', 'button', $container->id, 0)
-            ->call('dropInto', 'image', $container->id, 1);
+        // heading + text + button stacked in the LEFT column container; image right
+        $component->call('dropInto', 'heading', $left->id, 0)
+            ->call('dropInto', 'text', $left->id, 0)
+            ->call('dropInto', 'button', $left->id, 0)
+            ->call('dropInto', 'image', $right->id, 0);
 
-        $cols = $page->nodes()->whereNotNull('parent_id')->orderBy('sort')->get()
-            ->map(fn ($n) => $n->data['content']['_col'])->all();
-        $this->assertSame([0, 0, 0, 1], $cols);
+        $this->assertSame(['heading', 'text', 'button'], $left->children()->orderBy('sort')->pluck('type')->all());
+        $this->assertSame(['image'], $right->children()->pluck('type')->all());
 
         // public render: left column wraps its 3 elements in ONE flex div
         $html = app(PageRenderer::class)->render($page->fresh())['html'];

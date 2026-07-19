@@ -113,6 +113,7 @@ class Editor extends Component
                 'sort' => $container->children()->count(),
                 'data' => $this->containerData($cols, $col),
             ]);
+            $this->makeColumns($node, $cols);
             $this->resequence($container->id);
             $this->page->touch();
             $this->selectNode($node->id);
@@ -257,8 +258,29 @@ class Editor extends Component
             $this->resequence(null);
         }
 
+        $this->makeColumns($node, $cols);
         $this->page->touch();
         $this->selectNode($node->id);
+    }
+
+    /**
+     * Elementor-style columns: a multi-column container gets one inner
+     * container per track — each column is a real, stylable node.
+     */
+    private function makeColumns(PageNode $parent, int $cols): void
+    {
+        if ($cols < 2) {
+            return;
+        }
+
+        for ($i = 0; $i < $cols; $i++) {
+            $this->page->nodes()->create([
+                'type' => 'container',
+                'parent_id' => $parent->id,
+                'sort' => $i,
+                'data' => $this->containerData(1, $i),
+            ]);
+        }
     }
 
     public function addElement(string $type, ?int $col = null): void
