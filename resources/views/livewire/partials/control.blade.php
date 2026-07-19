@@ -92,8 +92,8 @@
 
     @case('unit')
       <div class="unit-wrap">
-        <input class="in" type="number" step="any" wire:model.live.debounce.400ms="{{ $base }}.value">
-        <select class="unit-sel" wire:model.change="{{ $base }}.unit">
+        <input class="in" type="number" step="any" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}.value">
+        <select class="unit-sel" data-livecss-unit wire:model.change="{{ $base }}.unit">
           @foreach ($units as $unit)
             <option value="{{ $unit }}">{{ $unit === '' ? '—' : $unit }}</option>
           @endforeach
@@ -103,22 +103,23 @@
 
     @case('color')
       <div class="colorrow">
-        <input type="color" class="cp" wire:model.live="{{ $base }}">
-        <input class="in hex mono" placeholder="none" wire:model.live.debounce.400ms="{{ $base }}">
+        <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}">
+        <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}">
       </div>
       @break
 
     @case('sides')
-      <div style="display:grid;grid-template-columns:repeat(4,1fr) 58px;gap:6px">
+      <div data-sides-wrap style="display:grid;grid-template-columns:repeat(4,1fr) 58px;gap:6px">
         @foreach (['top' => 'T', 'right' => 'R', 'bottom' => 'B', 'left' => 'L'] as $side => $abbr)
           <div>
             <input class="in" type="number" step="any" title="{{ ucfirst($side) }}"
                    style="padding:9px 6px;text-align:center"
+                   data-livecss="{{ $key }}" data-side="{{ $side }}"
                    wire:model.live.debounce.400ms="{{ $base }}.{{ $side }}.value">
             <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted-2);margin-top:3px">{{ $abbr }}</div>
           </div>
         @endforeach
-        <select class="unit-sel" style="height:37px"
+        <select class="unit-sel" data-livecss-unit style="height:37px"
                 wire:change="setSidesUnit('{{ $tab }}', '{{ $key }}', $event.target.value{{ $responsive ? ", '{$device}'" : '' }})">
           @foreach ($units as $unit)
             <option value="{{ $unit }}">{{ $unit }}</option>
@@ -156,7 +157,7 @@
       <div class="wgrid">
         @foreach ($widths as $i => $w)
           <div class="wnum-wrap">
-            <input class="in wnum" type="number" min="5" max="95"
+            <input class="in wnum" type="number" min="5" max="95" data-livecss="widths"
                    wire:model.live.debounce.400ms="settings.content.widths.{{ $i }}">
             <span>%</span>
           </div>

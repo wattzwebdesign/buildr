@@ -325,6 +325,67 @@ body{overflow:hidden}
 
         document.addEventListener('dragend', () => { clear(); drag = null; });
 
+        // Instant style preview: apply unit/side/color values as inline CSS
+        // on the selected node; the server render confirms and replaces it.
+        const CSSMAP = {
+          color: 'color', background: 'background', font_size: 'font-size',
+          font_weight: 'font-weight', line_height: 'line-height',
+          letter_spacing: 'letter-spacing', text_transform: 'text-transform',
+          text_align: 'text-align', width: 'width', max_width: 'max-width',
+          height: 'height', min_height: 'min-height', gap: 'gap',
+          object_fit: 'object-fit', border_style: 'border-style',
+          border_color: 'border-color', margin: 'margin', padding: 'padding',
+          border_width: 'border-width', border_radius: 'border-radius',
+        };
+        const CORNERS = { top: 'border-top-left-radius', right: 'border-top-right-radius',
+                          bottom: 'border-bottom-right-radius', left: 'border-bottom-left-radius' };
+        const unitOf = inp => {
+          const sel = (inp.closest('.unit-wrap') || inp.closest('[data-sides-wrap]'))?.querySelector('.unit-sel');
+          return sel ? sel.value : 'px';
+        };
+        const selectedNode = () => {
+          const id = window.Livewire.all()[0]?.$wire?.selectedId;
+          return id ? document.querySelector(`.page-frame [data-bnode="${id}"]`) : null;
+        };
+        const liveApply = inp => {
+          const key = inp.dataset.livecss;
+          const node = selectedNode();
+          if (!node) return;
+
+          if (key === 'widths') {
+            const vals = [...inp.closest('.wgrid').querySelectorAll('.wnum')].map(i => i.value || 0);
+            node.style.gridTemplateColumns = vals.map(v => v + 'fr').join(' ');
+            return;
+          }
+          if (key === 'element_gap') {
+            node.querySelectorAll(':scope > .bcol').forEach(c => c.style.gap = inp.value + unitOf(inp));
+            return;
+          }
+
+          const isNum = inp.type === 'number';
+          const val = inp.value === '' ? '' : inp.value + (isNum ? unitOf(inp) : '');
+          const side = inp.dataset.side;
+
+          if (side) {
+            const prop = key === 'border_radius' ? CORNERS[side]
+              : key === 'border_width' ? `border-${side}-width`
+              : `${CSSMAP[key]}-${side}`;
+            node.style.setProperty(prop, val);
+            return;
+          }
+          if (CSSMAP[key]) node.style.setProperty(CSSMAP[key], val);
+        };
+
+        document.addEventListener('input', e => {
+          const inp = e.target.closest('[data-livecss]');
+          if (inp) liveApply(inp);
+        });
+        document.addEventListener('change', e => {
+          if (!e.target.closest('[data-livecss-unit]')) return;
+          (e.target.closest('.unit-wrap') || e.target.closest('[data-sides-wrap]'))
+            ?.querySelectorAll('[data-livecss]').forEach(liveApply);
+        });
+
         // Instant typing: mirror content-field keystrokes straight into the
         // canvas DOM; the debounced server render confirms right behind it.
         document.addEventListener('input', e => {
