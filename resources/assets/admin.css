@@ -647,3 +647,14 @@ textarea.in{resize:vertical;line-height:1.5}
 .segi button:hover{color:var(--ink);border-color:var(--muted-2)}
 .segi button.on{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.08)}
 .segi button svg.ic{width:15px;height:15px;stroke-width:1.6}
+
+
+/* styled native selects — custom chevron, no OS steppers */
+select.in,.unit-sel{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23898f9a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:13px;
+  padding-right:28px;cursor:pointer;
+}
+.unit-sel{background-position:right 5px center;background-size:11px;padding-right:20px}
+select.in::-ms-expand{display:none}

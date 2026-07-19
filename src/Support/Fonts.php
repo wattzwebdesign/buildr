@@ -16,6 +16,10 @@ final class Fonts
 
     public static function options(string $emptyLabel = 'Default'): array
     {
-        return ['' => $emptyLabel] + array_combine(self::LIST, self::LIST);
+        $rest = array_values(array_diff(GoogleFonts::LIST, self::LIST));
+
+        return ['' => $emptyLabel]
+            + array_combine(self::LIST, self::LIST)
+            + array_combine($rest, $rest);
     }
 }

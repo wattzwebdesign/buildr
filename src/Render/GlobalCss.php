@@ -41,22 +41,19 @@ final class GlobalCss
     /** Google Fonts <link> tag when global fonts are set; empty otherwise. */
     public static function fontLink(): string
     {
-        $families = [];
+        $links = '';
         foreach (['font_heading' => 'font_heading_weight', 'font_body' => 'font_body_weight'] as $font => $weightKey) {
             if ($name = SiteSetting::get($font)) {
-                $weight = (int) (SiteSetting::get($weightKey) ?: 400);
-                $weights = array_unique([400, $weight, min(900, $weight + 200)]);
-                sort($weights);
-                $families[] = 'family='.urlencode($name).':wght@'.implode(';', $weights);
+                $spec = 'family='.urlencode($name);
+                if ($weight = (int) SiteSetting::get($weightKey)) {
+                    $spec .= ':wght@'.$weight;
+                }
+                // one link per family: a bad weight on one font can't break the other
+                $links .= '<link href="https://fonts.googleapis.com/css2?'.$spec.'&display=swap" rel="stylesheet">';
             }
         }
 
-        if ($families === []) {
-            return '';
-        }
-
-        return '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-            .'<link href="https://fonts.googleapis.com/css2?'.implode('&', $families).'&display=swap" rel="stylesheet">';
+        return $links === '' ? '' : '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'.$links;
     }
 
     /** name/value pairs for panel quick swatches. */
