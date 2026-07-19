@@ -399,16 +399,20 @@ body{overflow:hidden}
           window.Livewire.all()[0]?.$wire.set(path, ''); this.open = false; },
       });
       window.iconPicker = (path, initial) => ({
-        open: false, pasteMode: false, pasted: '', q: '', value: initial, icons: {}, names: [], limit: 150,
+        open: false, pasteMode: false, pasted: '', q: '', value: initial,
+        icons: {}, names: [], cats: {}, tags: {}, cat: 'all', limit: 240,
         more(e) {
           const el = e.target;
-          if (el.scrollTop + el.clientHeight > el.scrollHeight - 300 && this.limit < this.filtered.length) {
-            this.limit += 180;
+          if (el.scrollTop + el.clientHeight > el.scrollHeight - 400 && this.limit < this.filtered.length) {
+            this.limit += 240;
           }
         },
+        get catNames() { return Object.keys(this.cats); },
         get filtered() {
-          const q = this.q.toLowerCase();
-          return q ? this.names.filter(n => n.includes(q)) : this.names;
+          let base = this.cat === 'all' ? this.names : (this.cats[this.cat] || []);
+          const q = this.q.toLowerCase().trim();
+          if (!q) return base;
+          return base.filter(n => n.includes(q) || (this.tags[n] || []).some(t => t.includes(q)));
         },
         label() {
           if (!this.value) return 'Choose icon…';
@@ -423,8 +427,11 @@ body{overflow:hidden}
           this.$nextTick(() => this.$refs.search?.focus());
           if (this.names.length) return;
           window.__buildrIconsP ||= fetch(@js(route('buildr.icons').'?v=').concat(@js(substr(\Buildr\Support\UpdateCheck::installedRef() ?? '0', 0, 12)))).then(r => r.json());
-          this.icons = await window.__buildrIconsP;
-          this.names = Object.keys(this.icons);
+          const data = await window.__buildrIconsP;
+          this.icons = data.icons;
+          this.names = Object.keys(data.icons);
+          this.cats = data.meta.categories;
+          this.tags = data.meta.tags;
         },
         pick(n) { this.value = n; this.open = false; this.q = '';
           window.Livewire.all()[0]?.$wire.set(path, n); },

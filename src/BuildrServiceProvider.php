@@ -75,7 +75,10 @@ class BuildrServiceProvider extends ServiceProvider
         })->name('buildr.placeholder');
 
         \Illuminate\Support\Facades\Route::get('/buildr-assets/icons.json', function () {
-            return response(file_get_contents(__DIR__.'/../resources/icons/lucide.json'), 200, [
+            $payload = '{"icons":'.file_get_contents(__DIR__.'/../resources/icons/lucide.json')
+                .',"meta":'.file_get_contents(__DIR__.'/../resources/icons/lucide-meta.json').'}';
+
+            return response($payload, 200, [
                 'Content-Type' => 'application/json',
                 'Cache-Control' => 'public, max-age=86400',
             ]);
