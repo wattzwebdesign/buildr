@@ -266,6 +266,34 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('padding-left:10px', $css);
     }
 
+    public function test_editing_a_field_does_not_lose_column_assignment(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 2);
+        $container = $page->rootNodes()->first();
+
+        // heading + button both in the LEFT column
+        $component->call('dropInto', 'heading', $container->id, 0)
+            ->call('dropInto', 'button', $container->id, 0);
+
+        $button = $page->nodes()->where('type', 'button')->first();
+        $this->assertSame(0, $button->data['content']['_col']);
+
+        // typing new button text must not move it to the right column
+        $component->call('selectNode', $button->id)
+            ->set('settings.content.label', 'New label');
+
+        $fresh = $button->fresh();
+        $this->assertSame('New label', $fresh->setting('content', 'label'));
+        $this->assertSame(0, $fresh->data['content']['_col']);
+
+        // style/advanced saves must preserve it too
+        $component->call('setTab', 'style')->set('settings.style.background', '#111111');
+        $this->assertSame(0, $button->fresh()->data['content']['_col']);
+    }
+
     public function test_flex_alignment_controls_compile(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);

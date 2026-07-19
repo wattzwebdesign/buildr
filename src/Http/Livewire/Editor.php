@@ -477,7 +477,16 @@ class Editor extends Component
         }
 
         $data = $node->data ?? [];
-        $data[$tab] = $this->settings[$tab];
+
+        // Preserve internal keys (_col etc.) — they aren't schema fields, so
+        // they're absent from the panel settings and must survive saves.
+        $internal = array_filter(
+            $data[$tab] ?? [],
+            fn ($key) => str_starts_with((string) $key, '_'),
+            ARRAY_FILTER_USE_KEY
+        );
+
+        $data[$tab] = $this->settings[$tab] + $internal;
         $node->update(['data' => $data]);
         $this->page->touch();
     }

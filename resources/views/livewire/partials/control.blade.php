@@ -19,12 +19,14 @@
   @switch($field['type'])
 
     @case('text')
-      <input class="in" wire:model.live.debounce.400ms="{{ $base }}">
+      <input class="in" wire:model.live.debounce.400ms="{{ $base }}"
+             @if ($tab === 'content') data-mirror="{{ $key }}" data-mirror-mode="text" @endif>
       @break
 
     @case('textarea')
     @case('richtext')
-      <textarea class="in" rows="4" wire:model.live.debounce.400ms="{{ $base }}"></textarea>
+      <textarea class="in" rows="4" wire:model.live.debounce.400ms="{{ $base }}"
+                @if ($tab === 'content') data-mirror="{{ $key }}" data-mirror-mode="{{ $field['type'] === 'richtext' ? 'html' : 'text' }}" @endif></textarea>
       @break
 
     @case('code')

@@ -324,6 +324,27 @@ body{overflow:hidden}
         });
 
         document.addEventListener('dragend', () => { clear(); drag = null; });
+
+        // Instant typing: mirror content-field keystrokes straight into the
+        // canvas DOM; the debounced server render confirms right behind it.
+        document.addEventListener('input', e => {
+          const inp = e.target.closest('[data-mirror]');
+          if (!inp) return;
+          const id = window.Livewire.all()[0]?.$wire?.selectedId;
+          if (!id) return;
+          const node = document.querySelector(`.page-frame [data-bnode="${id}"]`);
+          if (!node) return;
+          if (inp.dataset.mirrorMode === 'html') {
+            node.innerHTML = inp.value;
+          } else {
+            let target = node;
+            while (target.children.length === 1 && target.children[0].childElementCount === 0
+                   && ['A', 'SPAN'].includes(target.children[0].tagName)) {
+              target = target.children[0];
+            }
+            target.textContent = inp.value;
+          }
+        });
       })();
     </script>
 
