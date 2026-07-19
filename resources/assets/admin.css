@@ -733,3 +733,6 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
   border-radius:8px;color:var(--muted);transition:.12s;
 }
 .cpk-clear:hover{color:var(--danger);border-color:var(--danger)}
+
+/* library search: input text must follow theme ink */
+.lib-search input{color:var(--ink)}
