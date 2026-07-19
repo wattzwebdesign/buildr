@@ -16,8 +16,8 @@ class Button extends Element
     public static function contentFields(): array
     {
         return [
-            Field::text('label')->required()->default('Click here'),
-            Field::link('link'),
+            Field::text('label')->required()->default('Click Here'),
+            Field::link('link')->default(['url' => '#']),
             Field::toggle('full_width')->responsive(),
         ];
     }

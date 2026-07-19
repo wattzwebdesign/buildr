@@ -42,6 +42,15 @@ class BuildrServiceProvider extends ServiceProvider
         \Livewire\Livewire::component('buildr.dashboard', \Buildr\Http\Livewire\Dashboard::class);
         \Livewire\Livewire::component('buildr.editor', \Buildr\Http\Livewire\Editor::class);
 
+        // Public asset, deliberately outside the admin middleware group —
+        // placeholder images render on the public site too.
+        \Illuminate\Support\Facades\Route::get('/buildr-assets/placeholder.svg', function () {
+            return response(file_get_contents(__DIR__.'/../resources/assets/placeholder.svg'), 200, [
+                'Content-Type' => 'image/svg+xml',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        })->name('buildr.placeholder');
+
         \Illuminate\Support\Facades\Route::middleware(config('buildr.admin_middleware', ['web']))
             ->prefix(config('buildr.admin_path', 'buildr'))
             ->group(function () {

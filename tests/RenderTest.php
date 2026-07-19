@@ -106,12 +106,12 @@ class RenderTest extends TestCase
         $response = $this->get('/home');
         $response->assertOk()
             ->assertSee('class="buildr-page"', false)
-            ->assertSee('.buildr-page h1{font-size:40px', false);
+            ->assertSee('.buildr-page :where(h1){font-size:40px', false);
 
         // the editor canvas ships the exact same base string
         $this->get("/buildr/pages/{$page->id}/edit")
             ->assertOk()
-            ->assertSee('.buildr-page h1{font-size:40px', false);
+            ->assertSee('.buildr-page :where(h1){font-size:40px', false);
     }
 
     public function test_hidden_nodes_are_skipped(): void

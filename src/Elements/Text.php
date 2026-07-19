@@ -16,7 +16,7 @@ class Text extends Element
     public static function contentFields(): array
     {
         return [
-            Field::richtext('body')->required(),
+            Field::richtext('body')->required()->default('<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.</p>'),
         ];
     }
 

@@ -24,7 +24,7 @@ class EditorTreeTest extends TestCase
 
         $heading = $page->nodes()->where('type', 'heading')->first();
         $this->assertSame($container->id, $heading->parent_id);
-        $this->assertSame('Heading', $heading->setting('content', 'text'));
+        $this->assertSame('Add Your Heading Text Here', $heading->setting('content', 'text'));
     }
 
     public function test_element_added_after_selected_sibling(): void
@@ -318,6 +318,33 @@ class EditorTreeTest extends TestCase
         // style/advanced saves must preserve it too
         $component->call('setTab', 'style')->set('settings.style.background', '#111111');
         $this->assertSame(0, $button->fresh()->data['content']['_col']);
+    }
+
+    public function test_new_elements_ship_with_default_content_and_placeholder(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'button')
+            ->call('addElement', 'image')
+            ->call('addElement', 'text');
+
+        $button = $page->nodes()->where('type', 'button')->first();
+        $this->assertSame('Click Here', $button->setting('content', 'label'));
+        $this->assertSame('#', $button->setting('content', 'link')['url']);
+
+        $image = $page->nodes()->where('type', 'image')->first();
+        $this->assertSame('/buildr-assets/placeholder.svg', $image->setting('content', 'src'));
+
+        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $this->assertStringContainsString('b-button', $html);
+        $this->assertStringContainsString('/buildr-assets/placeholder.svg', $html);
+        $this->assertStringContainsString('Lorem ipsum', $html);
+
+        // placeholder asset is publicly served
+        $this->get('/buildr-assets/placeholder.svg')->assertOk()
+            ->assertHeader('Content-Type', 'image/svg+xml');
     }
 
     public function test_editing_button_label_does_not_force_full_width(): void

@@ -16,8 +16,8 @@ class Image extends Element
     public static function contentFields(): array
     {
         return [
-            Field::media('src')->label('Image')->required(),
-            Field::text('alt')->label('Alt text'),
+            Field::media('src')->label('Image')->required()->default('/buildr-assets/placeholder.svg'),
+            Field::text('alt')->label('Alt text')->default('Placeholder image'),
             Field::text('caption'),
             Field::link('link'),
         ];
