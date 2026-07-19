@@ -148,7 +148,22 @@
 
     @case('media')
       <input class="in mono" placeholder="https://…/image.jpg" wire:model.live.debounce.400ms="{{ $base }}">
-      <div class="fld-hint">Paste an image URL — media library lands in a later stage.</div>
+      <label class="pl-edit" style="display:block;text-align:center;cursor:pointer;margin-top:8px">
+        <span wire:loading.remove wire:target="upload">Upload image…</span>
+        <span wire:loading wire:target="upload">Uploading…</span>
+        <input type="file" accept="image/*" style="display:none" wire:model="upload"
+               x-on:click="$wire.set('mediaTarget', '{{ $base }}')">
+      </label>
+      @error('upload')<div class="fld-hint" style="color:var(--danger)">{{ $message }}</div>@enderror
+      @if (!empty($recentMedia))
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+          @foreach ($recentMedia as $m)
+            <button type="button" title="{{ $m['name'] }}"
+                    style="aspect-ratio:1;border-radius:6px;border:1px solid var(--panel-line);background:url('{{ $m['url'] }}') center/cover;cursor:pointer"
+                    wire:click="$set('{{ $base }}', '{{ $m['url'] }}')"></button>
+          @endforeach
+        </div>
+      @endif
       @break
 
     @case('columns')

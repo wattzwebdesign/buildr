@@ -58,7 +58,9 @@ class Dashboard extends Component
             ->orderBy('title')
             ->get();
 
-        return view('buildr::livewire.dashboard', ['pages' => $pages])
-            ->title('Buildr — Pages');
+        return view('buildr::livewire.dashboard', [
+            'pages' => $pages,
+            'updateAvailable' => \Buildr\Support\UpdateCheck::available(),
+        ])->title('Buildr — Pages');
     }
 }

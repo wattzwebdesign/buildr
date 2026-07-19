@@ -10,6 +10,11 @@
     <nav>
       <a href="{{ route('buildr.pages') }}" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
     </nav>
+    @if ($updateAvailable)
+      <div style="margin:0 12px 10px;padding:9px 11px;border-radius:9px;background:var(--accent-soft);color:var(--accent-soft-ink);font-size:11px;line-height:1.5">
+        <b>Buildr update available.</b> Deploy pulls the latest engine automatically.
+      </div>
+    @endif
     <div class="side-foot" style="display:flex;align-items:center;gap:8px">
       buildr {{ \Composer\InstalledVersions::getPrettyVersion('buildr/buildr') ?? 'dev' }}
       <button data-theme-toggle title="Light / dark mode" style="margin-left:auto;width:26px;height:26px;display:grid;place-items:center;border-radius:7px;color:inherit">

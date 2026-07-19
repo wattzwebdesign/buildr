@@ -38,6 +38,12 @@ return [
     'blocks' => [],
 
     /*
+    | Disk for media library uploads (needs a public URL; run
+    | `php artisan storage:link` for the default 'public' disk).
+    */
+    'media_disk' => 'public',
+
+    /*
     | Per-site dynamic tags: 'name' => resolver. Resolvers may be callables
     | or container-resolvable invokable class names.
     | Example: 'review_count' => fn () => Review::count(),

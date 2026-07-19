@@ -13,6 +13,36 @@ use Livewire\Component;
 #[Layout('buildr::admin.layout')]
 class Editor extends Component
 {
+    use \Livewire\WithFileUploads;
+
+    public $upload = null;
+
+    /** Settings path (e.g. settings.content.src) the next upload fills. */
+    public string $mediaTarget = '';
+
+    public function updatedUpload(): void
+    {
+        $this->validate(['upload' => 'image|max:8192']);
+
+        $disk = config('buildr.media_disk', 'public');
+        $path = $this->upload->store('buildr', $disk);
+
+        \Buildr\Models\Media::create([
+            'path' => $path,
+            'name' => $this->upload->getClientOriginalName(),
+            'mime' => $this->upload->getMimeType(),
+            'size' => $this->upload->getSize(),
+        ]);
+
+        if ($this->mediaTarget !== '') {
+            $url = \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
+            data_set($this, $this->mediaTarget, $url);
+            $this->persistTab(explode('.', $this->mediaTarget)[1] ?? 'content');
+        }
+
+        $this->upload = null;
+    }
+
     public Page $page;
 
     public ?int $selectedId = null;
@@ -803,6 +833,8 @@ class Editor extends Component
             'tree' => $tree,
             'isChild' => (bool) $node?->parent_id,
             'globalSwatches' => \Buildr\Render\GlobalCss::swatches(),
+            'recentMedia' => \Buildr\Models\Media::latest()->take(12)->get()
+                ->map(fn ($m) => ['url' => $m->url(), 'name' => $m->name])->all(),
         ])->title("Buildr — {$this->page->title}");
     }
 }

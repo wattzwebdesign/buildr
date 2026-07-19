@@ -18,6 +18,7 @@ class StyleCompiler
     /** Style keys mapped 1:1 to CSS properties. */
     private const PROPS = [
         'color' => 'color',
+        'font_family' => 'font-family',
         'background' => 'background',
         'font_size' => 'font-size',
         'font_weight' => 'font-weight',

@@ -29,7 +29,7 @@ class Heading extends Element
     {
         return [
             Field::color('color'),
-            Field::select('font_family', [])->help('Global fonts listed first'),
+            Field::select('font_family', \Buildr\Support\Fonts::options('Global default'))->help('Loads via Google Fonts when set globally; per-element picks assume the font is available'),
             Field::unit('font_size', ['px', 'em', 'rem', 'vw'])->responsive(),
             Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100))),
             Field::unit('line_height', ['', 'px', 'em']),

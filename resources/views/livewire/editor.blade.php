@@ -163,13 +163,17 @@ body{overflow:hidden}
         <div class="fld-hint" style="margin-top:8px">Globals become CSS variables — every color picker shows them as quick swatches. Change one here, it updates site-wide.</div>
 
         <div class="ctl-group"><span>Global Fonts</span></div>
-        <div class="fld"><div class="fld-label">Heading font (Google Fonts name)</div>
-          <div class="unit-wrap"><input class="in" placeholder="e.g. Fraunces" wire:model.blur="site.font_heading">
+        <div class="fld"><div class="fld-label">Heading font</div>
+          <div class="unit-wrap"><select class="in" wire:model.change="site.font_heading">
+            @foreach (\Buildr\Support\Fonts::options('Default (system)') as $fv => $fl)<option value="{{ $fv }}">{{ $fl }}</option>@endforeach
+          </select>
           <select class="unit-sel" style="width:70px" wire:model.change="site.font_heading_weight">
             <option value="">wt</option>@foreach ([300,400,500,600,700,800] as $w)<option>{{ $w }}</option>@endforeach
           </select></div></div>
-        <div class="fld"><div class="fld-label">Body font (Google Fonts name)</div>
-          <div class="unit-wrap"><input class="in" placeholder="e.g. Archivo" wire:model.blur="site.font_body">
+        <div class="fld"><div class="fld-label">Body font</div>
+          <div class="unit-wrap"><select class="in" wire:model.change="site.font_body">
+            @foreach (\Buildr\Support\Fonts::options('Default (system)') as $fv => $fl)<option value="{{ $fv }}">{{ $fl }}</option>@endforeach
+          </select>
           <select class="unit-sel" style="width:70px" wire:model.change="site.font_body_weight">
             <option value="">wt</option>@foreach ([300,400,500,600] as $w)<option>{{ $w }}</option>@endforeach
           </select></div></div>
