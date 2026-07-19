@@ -37,6 +37,7 @@ class Form extends Element
     {
         return [
             Field::color('label_color')->section('Labels'),
+            ...Field::typographySet('label', 'label', 'Labels'),
             Field::color('field_background')->section('Fields'),
             Field::sides('field_radius', ['px'])->section('Fields'),
         ];

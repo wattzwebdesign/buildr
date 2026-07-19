@@ -100,6 +100,25 @@ class StyleCompiler
             }
         }
 
+        // Schema-driven CSS metadata: fields declaring ->css() compile
+        // directly, optionally scoped to a sub-selector via ->target().
+        foreach (array_merge($element::contentFields(), $element::styleFields()) as $field) {
+            if (! $field->cssProp) {
+                continue;
+            }
+            $sel = $field->target ? "{$selector} :where({$field->target})" : $selector;
+            $value = $settings[$field->key] ?? null;
+
+            if ($field->type === 'sides') {
+                $this->addSides($sel, $field->cssProp, $value);
+            } elseif (is_array($value) && (array_key_exists('normal', $value) || array_key_exists('hover', $value))) {
+                $this->addValue($sel, $field->cssProp, $value['normal'] ?? null);
+                $this->addValue("{$sel}:hover", $field->cssProp, $value['hover'] ?? null);
+            } else {
+                $this->addValue($sel, $field->cssProp, $value);
+            }
+        }
+
         // Element-specific declarations (containers, dividers, …).
         foreach ($element->css($selector) as $sel => $declarations) {
             if (str_starts_with($sel, '@')) {

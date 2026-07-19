@@ -30,11 +30,14 @@ class IconBox extends Element
     {
         return [
             Field::unit('icon_size', ['px', 'em'])->default(['value' => 32, 'unit' => 'px'])->section('Icon'),
-            Field::color('icon_color')->section('Icon'),
-            Field::color('heading_color')->section('Heading'),
-            Field::color('text_color')->section('Description'),
+            Field::color('icon_color')->section('Icon')->css('color')->target('.ib-icon svg'),
+            Field::color('heading_color')->section('Heading')->css('color')->target('h3'),
+            ...Field::typographySet('heading', 'h3', 'Heading'),
+            Field::color('text_color')->section('Description')->css('color')->target('.ib-body'),
+            ...Field::typographySet('text', '.ib-body', 'Description'),
             Field::color('background')->section('Box'),
             Field::sides('border_radius', ['px', '%'])->section('Box'),
+            Field::sides('box_padding', ['px', 'em'])->label('Padding')->section('Box')->css('padding'),
         ];
     }
 
@@ -53,9 +56,7 @@ class IconBox extends Element
                 'gap' => '12px',
                 'align-items' => $left ? 'flex-start' : null,
             ]),
-            "{$selector} :where(.ib-icon svg)" => ['width' => $px, 'height' => $px, 'color' => $s('icon_color', '#1f2933')],
-            "{$selector} :where(h3)" => array_filter(['color' => $this->node->setting('style', 'heading_color')]),
-            "{$selector} :where(.ib-body)" => array_filter(['color' => $this->node->setting('style', 'text_color')]),
+            "{$selector} :where(.ib-icon svg)" => ['width' => $px, 'height' => $px, 'color' => $s('icon_color', '#1f2933') ?: '#1f2933'],
         ], fn ($v) => $v !== []);
     }
 }

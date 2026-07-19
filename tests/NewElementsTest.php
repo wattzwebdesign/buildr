@@ -161,6 +161,28 @@ class NewElementsTest extends TestCase
         $this->assertSame('<p>Safe &lt;3 chars</p>', \Buildr\Support\Richtext::render('Safe <3 chars'));
     }
 
+    public function test_icon_box_per_part_typography_compiles_scoped(): void
+    {
+        $page = $this->pageWith('icon_box');
+        $box = $page->nodes()->where('type', 'icon_box')->first();
+
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $box->id)
+            ->call('setTab', 'style')
+            ->set('settings.style.heading_color', '#14324f')
+            ->set('settings.style.heading_font_size.desktop.value', 28)
+            ->set('settings.style.text_font_size.desktop.value', 14)
+            ->set('settings.style.heading_text_transform', 'uppercase');
+
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+
+        $this->assertStringContainsString(':where(h3){', $css);
+        $this->assertStringContainsString('color:#14324f', $css);
+        $this->assertStringContainsString('font-size:28px', $css);
+        $this->assertStringContainsString('text-transform:uppercase', $css);
+        $this->assertMatchesRegularExpression('/:where\(\.ib-body\)\{[^}]*font-size:14px/', $css);
+    }
+
     public function test_form_required_field_rejects_empty(): void
     {
         $page = $this->pageWith('form');

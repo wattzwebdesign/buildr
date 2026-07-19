@@ -30,6 +30,8 @@ class Field implements Arrayable
     public bool $required = false;
     public ?string $help = null;
     public ?string $section = null;  // collapsible panel group name
+    public ?string $cssProp = null;  // compile straight to this CSS property
+    public ?string $target = null;   // scoped sub-selector inside the element
     public bool $buttons = false;    // render select as icon button group
     public array $icons = [];        // option value => icon name (for buttons mode)
 
@@ -96,6 +98,35 @@ class Field implements Arrayable
     public function required(): static { $this->required = true; return $this; }
     public function responsive(): static { $this->responsive = true; return $this; }
     public function section(string $name): static { $this->section = $name; return $this; }
+    public function css(string $prop): static { $this->cssProp = $prop; return $this; }
+    public function target(string $selector): static { $this->target = $selector; return $this; }
+
+    /**
+     * Full typography control set compiling into a scoped sub-selector —
+     * gives composite widgets per-part typography (heading vs body etc.).
+     *
+     * @return array<int, Field>
+     */
+    public static function typographySet(string $prefix, ?string $target, string $section): array
+    {
+        $apply = function (Field $field) use ($target, $section): Field {
+            $field->section($section);
+
+            return $target ? $field->target($target) : $field;
+        };
+
+        return array_map($apply, [
+            static::select("{$prefix}_font_family", \Buildr\Support\Fonts::options('Default'))
+                ->label('Font Family')->css('font-family'),
+            static::unit("{$prefix}_font_size", ['px', 'em', 'rem'])->label('Font Size')->responsive()->css('font-size'),
+            static::select("{$prefix}_font_weight", array_combine(range(100, 900, 100), range(100, 900, 100)))
+                ->label('Font Weight')->css('font-weight'),
+            static::unit("{$prefix}_line_height", ['', 'px', 'em'])->label('Line Height')->css('line-height'),
+            static::unit("{$prefix}_letter_spacing", ['px', 'em'])->label('Letter Spacing')->css('letter-spacing'),
+            static::select("{$prefix}_text_transform", ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize'])
+                ->label('Text Transform')->css('text-transform'),
+        ]);
+    }
     public function states(): static { $this->states = true; return $this; }
 
     /** Render this select as a one-click icon group instead of a dropdown. */

@@ -37,6 +37,7 @@ class IconList extends Element
             Field::unit('icon_size', ['px', 'em'])->default(['value' => 18, 'unit' => 'px'])->section('Icons'),
             Field::color('icon_color')->section('Icons'),
             Field::color('text_color')->section('Text'),
+            ...Field::typographySet('text', 'li', 'Text'),
             Field::unit('item_gap', ['px', 'em'])->default(['value' => 10, 'unit' => 'px'])->section('Spacing'),
         ];
     }

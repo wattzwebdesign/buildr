@@ -32,6 +32,7 @@ class Tabs extends Element
         return [
             Field::color('active_color')->section('Labels'),
             Field::color('label_color')->section('Labels'),
+            ...Field::typographySet('label', 'label', 'Labels'),
         ];
     }
 

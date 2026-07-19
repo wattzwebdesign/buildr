@@ -32,7 +32,9 @@ class Accordion extends Element
     public static function styleFields(): array
     {
         return [
-            Field::color('title_color')->section('Titles'),
+            Field::color('title_color')->section('Titles')->css('color')->target('summary'),
+            ...Field::typographySet('title', 'summary', 'Titles'),
+            ...Field::typographySet('body', '.acc-body', 'Content'),
             Field::color('background')->section('Items'),
             Field::sides('border_radius', ['px'])->section('Items'),
             Field::unit('item_gap', ['px', 'em'])->default(['value' => 8, 'unit' => 'px'])->section('Items'),
