@@ -698,3 +698,38 @@ select.in::-ms-expand{display:none}
 /* number spinners: visible in dark mode (native glyphs are dark-on-dark) */
 input[type="number"]::-webkit-inner-spin-button{opacity:1}
 html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{filter:invert(1) brightness(1.4);opacity:.85}
+
+
+/* custom color picker */
+.cpk{position:relative}
+.cpk-swatch{
+  width:34px;height:34px;border-radius:8px;border:1px solid var(--panel-line);
+  cursor:pointer;transition:.12s;
+}
+.cpk-swatch:hover{border-color:var(--muted)}
+.cpk-swatch.empty{
+  background:repeating-conic-gradient(var(--panel-soft) 0 25%, var(--panel-card) 0 50%) 0 0/12px 12px !important;
+}
+.cpk-pop{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:70;width:220px;
+  background:var(--panel-card);border:1px solid var(--panel-line);border-radius:12px;
+  box-shadow:var(--shadow-pop);padding:10px;
+}
+.cpk-sv{position:relative;height:130px;border-radius:8px;cursor:crosshair;touch-action:none}
+.cpk-dot{
+  position:absolute;width:12px;height:12px;border-radius:99px;border:2px solid #fff;
+  box-shadow:0 0 0 1px rgba(0,0,0,.4);transform:translate(-50%,-50%);pointer-events:none;
+}
+.cpk-hue{
+  position:relative;height:12px;border-radius:99px;margin-top:10px;cursor:pointer;touch-action:none;
+  background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+}
+.cpk-knob{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:99px;background:#fff;
+  border:1px solid rgba(0,0,0,.3);box-shadow:0 1px 3px rgba(0,0,0,.3);transform:translate(-50%,-50%);pointer-events:none;
+}
+.cpk-clear{
+  width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--panel-line);
+  border-radius:8px;color:var(--muted);transition:.12s;
+}
+.cpk-clear:hover{color:var(--danger);border-color:var(--danger)}

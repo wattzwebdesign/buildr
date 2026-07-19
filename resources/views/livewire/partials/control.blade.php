@@ -121,34 +121,22 @@
       @break
 
     @case('color')
+      @php $cval = data_get($settings, str_replace('settings.', '', $base)); @endphp
       @if (!empty($field['states']))
         <div x-data="{ st: 'normal' }">
           <div class="segi" style="margin-bottom:6px">
             <button type="button" :class="st === 'normal' && 'on'" @click="st = 'normal'" style="font-size:10.5px;font-weight:600">Normal</button>
             <button type="button" :class="st === 'hover' && 'on'" @click="st = 'hover'" style="font-size:10.5px;font-weight:600">Hover</button>
           </div>
-          <div x-show="st === 'normal'" class="colorrow">
-            <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}.normal">
-            <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}.normal">
+          <div x-show="st === 'normal'">
+            @include('buildr::livewire.partials.colorpicker', ['path' => $base.'.normal', 'current' => $cval['normal'] ?? '', 'ckey' => $key, 'swatches' => $globalSwatches ?? []])
           </div>
-          <div x-show="st === 'hover'" x-cloak class="colorrow">
-            <input type="color" class="cp" wire:model.live="{{ $base }}.hover">
-            <input class="in hex mono" placeholder="inherit" wire:model.live.debounce.400ms="{{ $base }}.hover">
+          <div x-show="st === 'hover'" x-cloak>
+            @include('buildr::livewire.partials.colorpicker', ['path' => $base.'.hover', 'current' => $cval['hover'] ?? '', 'ckey' => null, 'swatches' => $globalSwatches ?? []])
           </div>
         </div>
       @else
-      <div class="colorrow">
-        <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}">
-        <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}">
-      </div>
-      @endif
-      @if (!empty($globalSwatches))
-        <div class="swatches mini" style="margin-top:6px">
-          @foreach ($globalSwatches as $sw)
-            <button type="button" class="sw" style="background:{{ $sw['value'] }}" title="{{ $sw['name'] }} — links to global"
-                    wire:click="$set('{{ $base }}', '{{ $sw['var'] }}')"></button>
-          @endforeach
-        </div>
+        @include('buildr::livewire.partials.colorpicker', ['path' => $base, 'current' => is_scalar($cval) ? $cval : '', 'ckey' => $key, 'swatches' => $globalSwatches ?? []])
       @endif
       @break
 

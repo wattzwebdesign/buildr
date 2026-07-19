@@ -153,9 +153,8 @@ body{overflow:hidden}
         <div class="ctl-group"><span>Global Colors</span></div>
         @foreach ($site['colors'] ?? [] as $i => $color)
           <div class="fld" wire:key="gcolor-{{ $i }}" style="display:flex;gap:8px;align-items:center">
-            <input type="color" class="cp" wire:model.live="site.colors.{{ $i }}.value">
+            @include('buildr::livewire.partials.colorpicker', ['path' => "site.colors.{$i}.value", 'current' => $color['value'] ?? '', 'ckey' => null, 'swatches' => []])
             <input class="in" style="flex:1" wire:model.blur="site.colors.{{ $i }}.name">
-            <input class="in hex mono" style="width:86px" wire:model.blur="site.colors.{{ $i }}.value">
             <button type="button" style="color:var(--danger);font-size:14px" wire:click="removeGlobalColor({{ $i }})">✕</button>
           </div>
         @endforeach
@@ -360,6 +359,45 @@ body{overflow:hidden}
         inp.value = inp.value.slice(0, s) + token + inp.value.slice(e);
         inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
+      window.colorPicker = (path, initial, ckey, swatches) => ({
+        open: false, drag: null, h: 0, s: 1, v: 1, hex: initial || '', swatches: swatches || [],
+        display() {
+          if (!this.hex) return '';
+          if (this.hex.startsWith('var(')) {
+            const m = this.swatches.find(sw => sw.var === this.hex);
+            return m ? m.value : '';
+          }
+          return this.hex;
+        },
+        toggle() { this.open = !this.open; if (this.open) this.parse(this.display() || '#ff5533'); },
+        parse(hex) {
+          const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim()); if (!m) return;
+          const n = parseInt(m[1], 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+          this.v = mx; this.s = mx ? d / mx : 0;
+          this.h = d === 0 ? 0 : 60 * (mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4);
+        },
+        toHex() {
+          const f = n => { const k = (n + this.h / 60) % 6, c = this.v - this.v * this.s * Math.max(0, Math.min(k, 4 - k, 1));
+            return Math.round(c * 255).toString(16).padStart(2, '0'); };
+          return '#' + f(5) + f(3) + f(1);
+        },
+        svMove(e) { const r = e.currentTarget.getBoundingClientRect();
+          this.s = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+          this.v = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+          this.hex = this.toHex(); this.live(); },
+        hueMove(e) { const r = e.currentTarget.getBoundingClientRect();
+          this.h = Math.min(359.9, Math.max(0, (e.clientX - r.left) / r.width * 360));
+          this.hex = this.toHex(); this.live(); },
+        setHex(val) { const m = /^#?([0-9a-f]{6})$/i.exec(val.trim());
+          if (!m) return; this.hex = '#' + m[1].toLowerCase(); this.parse(this.hex); this.live(); this.push(); },
+        live() { if (ckey) window.__liveColor?.(ckey, this.hex); },
+        push() { window.Livewire.all()[0]?.$wire.set(path, this.hex); },
+        pickGlobal(sw) { this.hex = sw.var; if (ckey) window.__liveColor?.(ckey, sw.value);
+          window.Livewire.all()[0]?.$wire.set(path, sw.var); this.open = false; },
+        clear() { this.hex = ''; if (ckey) window.__liveColor?.(ckey, '');
+          window.Livewire.all()[0]?.$wire.set(path, ''); this.open = false; },
+      });
       window.fontPicker = (path, initial) => ({
         open: false, q: '', value: initial,
         get filtered() {
@@ -538,6 +576,10 @@ body{overflow:hidden}
         const selectedNode = () => {
           const id = window.Livewire.all()[0]?.$wire?.selectedId;
           return id ? document.querySelector(`.page-frame [data-bnode="${id}"]`) : null;
+        };
+        window.__liveColor = (key, val) => {
+          const node = selectedNode();
+          if (node && CSSMAP[key]) node.style.setProperty(CSSMAP[key], val);
         };
         const liveApply = inp => {
           const key = inp.dataset.livecss;
