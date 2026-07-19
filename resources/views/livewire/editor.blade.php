@@ -41,13 +41,13 @@ body{overflow:hidden}
 #el-tools svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #elt-drag{cursor:grab}
 .page-frame.child-hover .sec-tools{display:none}
-/* every container shows faint dashed bounds in the editor, Elementor-style */
-.page-frame [data-bcontainer]{outline:1px dashed rgba(150,153,163,.45);outline-offset:-2px}
+/* every container AND column shows faint dashed bounds in the editor, Elementor-style */
+.page-frame [data-bcontainer],.page-frame .bcol{outline:1px dashed rgba(150,153,163,.45);outline-offset:-2px}
 .page-frame [data-bcontainer]:hover{outline-color:rgba(255,178,0,.6)}
 #el-tools #elt-type{width:26px;height:24px;display:grid;place-items:center;background:rgba(0,0,0,.14);cursor:pointer}
 #el-tools #elt-type svg{display:none}
-#el-tools.is-container svg[data-t="container"]{display:block}
-#el-tools:not(.is-container) svg[data-t="element"]{display:block}
+#el-tools.is-container #elt-type svg[data-t="container"]{display:block}
+#el-tools:not(.is-container) #elt-type svg[data-t="element"]{display:block}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
