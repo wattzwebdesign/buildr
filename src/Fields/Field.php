@@ -29,6 +29,7 @@ class Field implements Arrayable
     public bool $states = false;     // normal / hover
     public bool $required = false;
     public ?string $help = null;
+    public ?string $section = null;  // collapsible panel group name
     public bool $buttons = false;    // render select as icon button group
     public array $icons = [];        // option value => icon name (for buttons mode)
 
@@ -94,6 +95,7 @@ class Field implements Arrayable
     public function help(string $help): static { $this->help = $help; return $this; }
     public function required(): static { $this->required = true; return $this; }
     public function responsive(): static { $this->responsive = true; return $this; }
+    public function section(string $name): static { $this->section = $name; return $this; }
     public function states(): static { $this->states = true; return $this; }
 
     /** Render this select as a one-click icon group instead of a dropdown. */
@@ -119,6 +121,7 @@ class Field implements Arrayable
             'states' => $this->states,
             'required' => $this->required,
             'help' => $this->help,
+            'section' => $this->section,
             'buttons' => $this->buttons,
             'icons' => $this->icons,
         ], fn ($v) => $v !== null && $v !== [] && $v !== false);

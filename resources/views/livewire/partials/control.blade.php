@@ -13,6 +13,21 @@
       @if ($responsive)
         <span class="ctx-chip" style="margin-left:auto;font-size:8.5px" title="Editing {{ $device }} value">{{ strtoupper(substr($device, 0, 1)) }}</span>
       @endif
+      @if ($tab === 'content' && in_array($field['type'], ['text', 'textarea', 'richtext', 'link']) && !empty($dynTags))
+        <span x-data="{ o: false }" style="{{ $responsive ? '' : 'margin-left:auto;' }}position:relative">
+          <button type="button" title="Insert dynamic tag" @click="o = !o" style="color:var(--accent);display:grid;place-items:center">
+            <svg class="ic" viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;stroke:none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5z"/></svg>
+          </button>
+          <div x-show="o" x-cloak @click.outside="o = false" class="fp-pop" style="left:auto;right:0;width:200px;top:calc(100% + 4px)">
+            <div class="fp-list" style="margin-top:0">
+              @foreach ($dynTags as $tag)
+                <button type="button" class="fp-item mono" style="font-size:11px"
+                        @click="insertTag($el, @js($tag)); o = false">{{ $tag }}</button>
+              @endforeach
+            </div>
+          </div>
+        </span>
+      @endif
     </div>
   @endif
 
@@ -89,7 +104,8 @@
     @case('toggle')
       <label class="togglerow" style="cursor:pointer">
         <span>{{ $field['label'] }}</span>
-        <input type="checkbox" wire:model.change="{{ $base }}">
+        <input type="checkbox" class="tgi" wire:model.change="{{ $base }}">
+        <span class="tg"></span>
       </label>
       @break
 
@@ -105,10 +121,27 @@
       @break
 
     @case('color')
+      @if (!empty($field['states']))
+        <div x-data="{ st: 'normal' }">
+          <div class="segi" style="margin-bottom:6px">
+            <button type="button" :class="st === 'normal' && 'on'" @click="st = 'normal'" style="font-size:10.5px;font-weight:600">Normal</button>
+            <button type="button" :class="st === 'hover' && 'on'" @click="st = 'hover'" style="font-size:10.5px;font-weight:600">Hover</button>
+          </div>
+          <div x-show="st === 'normal'" class="colorrow">
+            <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}.normal">
+            <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}.normal">
+          </div>
+          <div x-show="st === 'hover'" x-cloak class="colorrow">
+            <input type="color" class="cp" wire:model.live="{{ $base }}.hover">
+            <input class="in hex mono" placeholder="inherit" wire:model.live.debounce.400ms="{{ $base }}.hover">
+          </div>
+        </div>
+      @else
       <div class="colorrow">
         <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}">
         <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}">
       </div>
+      @endif
       @if (!empty($globalSwatches))
         <div class="swatches mini" style="margin-top:6px">
           @foreach ($globalSwatches as $sw)
@@ -144,7 +177,8 @@
         <input class="in url mono" placeholder="/page or https://…" wire:model.live.debounce.400ms="{{ $base }}.url">
         <label class="togglerow" style="cursor:pointer">
           <span>Open in new tab</span>
-          <input type="checkbox" wire:model.change="{{ $base }}.new_tab">
+          <input type="checkbox" class="tgi" wire:model.change="{{ $base }}.new_tab">
+          <span class="tg"></span>
         </label>
       </div>
       @break
@@ -215,7 +249,7 @@
                     <textarea class="in" rows="3" wire:model.live.debounce.400ms="{{ $sbase }}"></textarea>
                   @elseif ($sub['type'] === 'toggle')
                     <label class="togglerow" style="cursor:pointer"><span>{{ $sub['label'] }}</span>
-                      <input type="checkbox" wire:model.change="{{ $sbase }}"></label>
+                      <input type="checkbox" class="tgi" wire:model.change="{{ $sbase }}"><span class="tg"></span></label>
                   @elseif ($sub['type'] === 'number')
                     <input class="in" type="number" wire:model.live.debounce.400ms="{{ $sbase }}">
                   @else

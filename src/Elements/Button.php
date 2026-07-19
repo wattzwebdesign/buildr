@@ -71,10 +71,11 @@ class Button extends Element
         return [
             Field::color('color')->label('Text color')->states(),
             Field::color('background')->states(),
-            Field::unit('font_size', ['px', 'em', 'rem']),
-            Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100))),
-            Field::sides('border_radius', ['px', '%']),
-            Field::sides('padding', ['px', 'em']),
+            Field::unit('font_size', ['px', 'em', 'rem'])->section('Typography'),
+            Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100)))->section('Typography'),
+            Field::sides('border_radius', ['px', '%'])->section('Border'),
+            Field::sides('padding', ['px', 'em'])->section('Spacing'),
+            Field::select('shadow', ['' => 'None', 'sm' => 'Small', 'md' => 'Medium', 'lg' => 'Large'])->section('Effects'),
         ];
     }
 }

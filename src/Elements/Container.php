@@ -69,10 +69,11 @@ class Container extends Element
         return [
             Field::color('background'),
             Field::select('border_style', ['none' => 'None', 'solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('none')
-                ->buttons(['none' => 'ban', 'solid' => 'line-solid', 'dashed' => 'line-dashed', 'dotted' => 'line-dotted']),
-            Field::sides('border_width', ['px']),
-            Field::color('border_color'),
-            Field::sides('border_radius', ['px', '%']),
+                ->buttons(['none' => 'ban', 'solid' => 'line-solid', 'dashed' => 'line-dashed', 'dotted' => 'line-dotted'])->section('Border'),
+            Field::sides('border_width', ['px'])->section('Border'),
+            Field::color('border_color')->section('Border'),
+            Field::sides('border_radius', ['px', '%'])->section('Border'),
+            Field::select('shadow', ['' => 'None', 'sm' => 'Small', 'md' => 'Medium', 'lg' => 'Large'])->section('Effects'),
         ];
     }
 

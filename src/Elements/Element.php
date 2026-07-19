@@ -49,14 +49,14 @@ abstract class Element
                 'stretch' => 'Stretch',
             ])->label('Align self')->responsive()
                 ->buttons(['' => 'ban', 'start' => 'h-start', 'center' => 'h-center', 'end' => 'h-end', 'stretch' => 'h-stretch']),
-            Field::sides('margin')->responsive(),
-            Field::sides('padding')->responsive(),
-            Field::text('anchor_id')->label('Anchor ID'),
-            Field::text('css_class')->label('CSS classes'),
-            Field::toggle('hide_desktop'),
-            Field::toggle('hide_tablet'),
-            Field::toggle('hide_mobile'),
-            Field::code('custom_css')->label('Custom CSS'),
+            Field::sides('margin')->responsive()->section('Spacing'),
+            Field::sides('padding')->responsive()->section('Spacing'),
+            Field::text('anchor_id')->label('Anchor ID')->section('Attributes'),
+            Field::text('css_class')->label('CSS classes')->section('Attributes'),
+            Field::toggle('hide_desktop')->section('Visibility'),
+            Field::toggle('hide_tablet')->section('Visibility'),
+            Field::toggle('hide_mobile')->section('Visibility'),
+            Field::code('custom_css')->label('Custom CSS')->section('Custom CSS'),
         ];
     }
 

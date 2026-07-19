@@ -757,6 +757,12 @@ class Editor extends Component
     {
         $defaultUnit = $field->units[0] ?? 'px';
 
+        if ($field->type === 'color' && $field->states) {
+            return is_array($value)
+                ? ['normal' => $value['normal'] ?? '', 'hover' => $value['hover'] ?? '']
+                : ['normal' => is_scalar($value) ? (string) $value : '', 'hover' => ''];
+        }
+
         return match ($field->type) {
             'unit' => is_array($value) && array_key_exists('value', $value)
                 ? ['value' => $value['value'], 'unit' => $value['unit'] ?? $defaultUnit]
@@ -833,6 +839,7 @@ class Editor extends Component
             'tree' => $tree,
             'isChild' => (bool) $node?->parent_id,
             'globalSwatches' => \Buildr\Render\GlobalCss::swatches(),
+            'dynTags' => ['{{site.name}}', '{{site.phone}}', '{{site.phone_link}}', '{{site.email}}', '{{site.address}}', '{{year}}', '{{date:F j, Y}}', '{{page.title}}', '{{page.url}}'],
             'recentMedia' => \Buildr\Models\Media::latest()->take(12)->get()
                 ->map(fn ($m) => ['url' => $m->url(), 'name' => $m->name])->all(),
         ])->title("Buildr — {$this->page->title}");

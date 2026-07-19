@@ -29,12 +29,12 @@ class Heading extends Element
     {
         return [
             Field::color('color'),
-            Field::select('font_family', \Buildr\Support\Fonts::options('Global default'))->help('Loads via Google Fonts when set globally; per-element picks assume the font is available'),
-            Field::unit('font_size', ['px', 'em', 'rem', 'vw'])->responsive(),
-            Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100))),
-            Field::unit('line_height', ['', 'px', 'em']),
-            Field::unit('letter_spacing', ['px', 'em']),
-            Field::select('text_transform', ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize']),
+            Field::select('font_family', \Buildr\Support\Fonts::options('Global default'))->section('Typography'),
+            Field::unit('font_size', ['px', 'em', 'rem', 'vw'])->responsive()->section('Typography'),
+            Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100)))->section('Typography'),
+            Field::unit('line_height', ['', 'px', 'em'])->section('Typography'),
+            Field::unit('letter_spacing', ['px', 'em'])->section('Typography'),
+            Field::select('text_transform', ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize'])->section('Typography'),
             Field::select('text_align', ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'])->responsive()
                 ->buttons(['left' => 'text-left', 'center' => 'text-center', 'right' => 'text-right']),
         ];

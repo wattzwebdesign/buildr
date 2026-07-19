@@ -429,6 +429,29 @@ class EditorTreeTest extends TestCase
         $this->assertSame(2, $container->fresh()->children()->count());
     }
 
+    public function test_hover_state_colors_and_shadow_compile(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'button');
+
+        $button = $page->nodes()->where('type', 'button')->first();
+
+        $component->call('selectNode', $button->id)
+            ->call('setTab', 'style')
+            ->set('settings.style.background.normal', '#14324f')
+            ->set('settings.style.background.hover', '#e8a33d')
+            ->set('settings.style.shadow', 'md');
+
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+
+        $this->assertStringContainsString('background:#14324f', $css);
+        $this->assertStringContainsString(':hover{background:#e8a33d', $css);
+        $this->assertStringContainsString('box-shadow:0 6px 18px', $css);
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

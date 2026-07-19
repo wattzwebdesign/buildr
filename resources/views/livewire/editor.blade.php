@@ -196,8 +196,34 @@ body{overflow:hidden}
           <div class="fld-hint">Click a section or element in the canvas, or add one from the library (grid icon above).</div>
         @endif
 
-        @foreach ($fields as $field)
-          @include('buildr::livewire.partials.control', ['field' => $field, 'tab' => $tab, 'device' => $device])
+        @php
+          $grouped = [];
+          foreach ($fields as $fieldDef) {
+              $sec = $fieldDef['section'] ?? null;
+              if (! $grouped || end($grouped)['name'] !== $sec) {
+                  $grouped[] = ['name' => $sec, 'fields' => []];
+              }
+              $grouped[array_key_last($grouped)]['fields'][] = $fieldDef;
+          }
+        @endphp
+        @foreach ($grouped as $chunk)
+          @if ($chunk['name'])
+            <div class="fsec" x-data="{ open: false }" wire:key="fsec-{{ $selectedId }}-{{ $tab }}-{{ $chunk['name'] }}">
+              <button type="button" class="fsec-h" @click="open = !open">
+                {{ $chunk['name'] }}
+                <svg class="ic" viewBox="0 0 24 24" :style="open && 'transform:rotate(180deg)'"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div x-show="open" class="fsec-b">
+                @foreach ($chunk['fields'] as $field)
+                  @include('buildr::livewire.partials.control', ['field' => $field, 'tab' => $tab, 'device' => $device])
+                @endforeach
+              </div>
+            </div>
+          @else
+            @foreach ($chunk['fields'] as $field)
+              @include('buildr::livewire.partials.control', ['field' => $field, 'tab' => $tab, 'device' => $device])
+            @endforeach
+          @endif
         @endforeach
 
         @if ($schema && $isChild)
@@ -325,6 +351,14 @@ body{overflow:hidden}
         l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(f)
                + '&text=' + encodeURIComponent(f + 'Default') + '&display=swap';
         document.head.appendChild(l);
+      };
+      window.insertTag = (el, token) => {
+        const fld = el.closest('.fld');
+        const inp = fld?.querySelector('input.in, textarea.in');
+        if (!inp) return;
+        const s = inp.selectionStart ?? inp.value.length, e = inp.selectionEnd ?? s;
+        inp.value = inp.value.slice(0, s) + token + inp.value.slice(e);
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
       window.fontPicker = (path, initial) => ({
         open: false, q: '', value: initial,

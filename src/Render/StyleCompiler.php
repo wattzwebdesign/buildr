@@ -58,7 +58,24 @@ class StyleCompiler
         $settings = $node->settings('style') + $node->settings('content');
 
         foreach (self::PROPS as $key => $prop) {
-            $this->addValue($selector, $prop, $settings[$key] ?? null);
+            $value = $settings[$key] ?? null;
+            if (is_array($value) && (array_key_exists('normal', $value) || array_key_exists('hover', $value))) {
+                $this->addValue($selector, $prop, $value['normal'] ?? null);
+                $this->addValue("{$selector}:hover", $prop, $value['hover'] ?? null);
+            } else {
+                $this->addValue($selector, $prop, $value);
+            }
+        }
+
+        if ($shadow = $settings['shadow'] ?? null) {
+            $presets = [
+                'sm' => '0 1px 3px rgba(0,0,0,.12)',
+                'md' => '0 6px 18px rgba(0,0,0,.14)',
+                'lg' => '0 16px 44px rgba(0,0,0,.18)',
+            ];
+            if (isset($presets[$shadow])) {
+                $this->rules['desktop'][$selector]['box-shadow'] = $presets[$shadow];
+            }
         }
 
         foreach (self::SIDE_PROPS as $key => $prop) {

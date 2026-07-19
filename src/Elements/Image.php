@@ -30,7 +30,8 @@ class Image extends Element
             Field::unit('max_width', ['px', '%'])->responsive(),
             Field::unit('height', ['px', 'vh'])->responsive(),
             Field::select('object_fit', ['' => 'Default', 'cover' => 'Cover', 'contain' => 'Contain']),
-            Field::sides('border_radius', ['px', '%']),
+            Field::sides('border_radius', ['px', '%'])->section('Border'),
+            Field::select('shadow', ['' => 'None', 'sm' => 'Small', 'md' => 'Medium', 'lg' => 'Large'])->section('Effects'),
         ];
     }
 }
