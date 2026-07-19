@@ -20,9 +20,9 @@
           </button>
           <div x-show="o" x-cloak @click.outside="o = false" class="fp-pop" style="left:auto;right:0;width:200px;top:calc(100% + 4px)">
             <div class="fp-list" style="margin-top:0">
-              @foreach ($dynTags as $tag)
-                <button type="button" class="fp-item mono" style="font-size:11px"
-                        @click="insertTag($el, @js($tag)); o = false">{{ $tag }}</button>
+              @foreach ($dynTags as $label => $tag)
+                <button type="button" class="fp-item" style="font-size:12px" title="{{ $tag }}"
+                        @click="insertTag($el, @js($tag)); o = false">{{ $label }}</button>
               @endforeach
             </div>
           </div>

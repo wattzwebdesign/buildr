@@ -839,7 +839,17 @@ class Editor extends Component
             'tree' => $tree,
             'isChild' => (bool) $node?->parent_id,
             'globalSwatches' => \Buildr\Render\GlobalCss::swatches(),
-            'dynTags' => ['{{site.name}}', '{{site.phone}}', '{{site.phone_link}}', '{{site.email}}', '{{site.address}}', '{{year}}', '{{date:F j, Y}}', '{{page.title}}', '{{page.url}}'],
+            'dynTags' => [
+                'Site Name' => '{{site.name}}',
+                'Phone Number' => '{{site.phone}}',
+                'Phone Link (tel:)' => '{{site.phone_link}}',
+                'Email Address' => '{{site.email}}',
+                'Street Address' => '{{site.address}}',
+                'Current Year' => '{{year}}',
+                "Today's Date" => '{{date:F j, Y}}',
+                'Page Title' => '{{page.title}}',
+                'Page URL' => '{{page.url}}',
+            ],
             'recentMedia' => \Buildr\Models\Media::latest()->take(12)->get()
                 ->map(fn ($m) => ['url' => $m->url(), 'name' => $m->name])->all(),
         ])->title("Buildr — {$this->page->title}");
