@@ -25,6 +25,11 @@ class Page extends Model
         return $this->nodes()->whereNull('parent_id');
     }
 
+    public function formSubmissions(): HasMany
+    {
+        return $this->hasMany(FormSubmission::class, 'page_id');
+    }
+
     public function revisions(): HasMany
     {
         return $this->hasMany(Revision::class, 'page_id')->latest();

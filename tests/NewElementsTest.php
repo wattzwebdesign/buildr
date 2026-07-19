@@ -1,0 +1,130 @@
+<?php
+
+namespace Buildr\Tests;
+
+use Buildr\Http\Livewire\Editor;
+use Buildr\Models\Page;
+use Buildr\Render\PageRenderer;
+use Livewire\Livewire;
+
+class NewElementsTest extends TestCase
+{
+    private function pageWith(string ...$types): Page
+    {
+        $page = Page::create(['title' => 'T', 'slug' => 't', 'published_at' => now()]);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])->call('addContainer', 1);
+        foreach ($types as $type) {
+            $component->call('addElement', $type);
+        }
+
+        return $page->fresh();
+    }
+
+    public function test_every_registered_element_renders_with_defaults(): void
+    {
+        $types = ['video', 'map', 'html', 'star_rating', 'icon_box', 'icon_list',
+            'social_icons', 'accordion', 'tabs', 'gallery', 'form'];
+
+        $page = $this->pageWith(...$types);
+        $result = app(PageRenderer::class)->render($page);
+
+        foreach (['b-video', 'b-map', 'b-stars', 'b-iconbox', 'b-iconlist',
+            'b-social', 'b-accordion', 'b-tabs', 'b-gallery', 'b-form'] as $marker) {
+            $this->assertStringContainsString($marker, $result['html'], $marker);
+        }
+    }
+
+    public function test_editor_renders_style_tabs_for_all_new_elements(): void
+    {
+        $page = $this->pageWith('icon_list', 'accordion', 'tabs', 'gallery', 'form', 'star_rating');
+
+        $component = Livewire::test(Editor::class, ['page' => $page]);
+        foreach ($page->nodes()->whereNotNull('parent_id')->get() as $node) {
+            $component->call('selectNode', $node->id)
+                ->assertOk()
+                ->call('setTab', 'style')->assertOk()
+                ->call('setTab', 'advanced')->assertOk();
+        }
+    }
+
+    public function test_repeater_add_and_remove_items(): void
+    {
+        $page = $this->pageWith('icon_list');
+        $list = $page->nodes()->where('type', 'icon_list')->first();
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $list->id);
+
+        $this->assertCount(3, $list->fresh()->setting('content', 'items')); // defaults
+
+        $component->call('addRepeaterItem', 'content', 'items')
+            ->set('settings.content.items.3.text', 'Fourth item');
+        $this->assertCount(4, $list->fresh()->setting('content', 'items'));
+        $this->assertSame('Fourth item', $list->fresh()->setting('content', 'items')[3]['text']);
+
+        $component->call('removeRepeaterItem', 'content', 'items', 0);
+        $this->assertCount(3, $list->fresh()->setting('content', 'items'));
+    }
+
+    public function test_accordion_renders_native_details_with_exclusive_group(): void
+    {
+        $page = $this->pageWith('accordion');
+        $html = app(PageRenderer::class)->render($page)['html'];
+
+        $this->assertSame(2, substr_count($html, '<details'));
+        $this->assertStringContainsString('name="acc-', $html);
+        $this->assertStringContainsString('open', $html);
+    }
+
+    public function test_tabs_render_without_javascript(): void
+    {
+        $page = $this->pageWith('tabs');
+        $result = app(PageRenderer::class)->render($page);
+
+        $this->assertSame(2, substr_count($result['html'], 'tb-panel"'));
+        $this->assertStringNotContainsString('<script', $result['html']);
+        $this->assertStringContainsString(':checked ~ .tb-panels', $result['css']);
+    }
+
+    public function test_video_url_becomes_youtube_embed(): void
+    {
+        $page = $this->pageWith('video');
+        $video = $page->nodes()->where('type', 'video')->first();
+
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $video->id)
+            ->set('settings.content.url', 'https://www.youtube.com/watch?v=abc123XYZ');
+
+        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $this->assertStringContainsString('youtube-nocookie.com/embed/abc123XYZ', $html);
+    }
+
+    public function test_form_submission_stores_payload_and_redirects(): void
+    {
+        $page = $this->pageWith('form');
+        $form = $page->nodes()->where('type', 'form')->first();
+
+        $response = $this->from('/t')->post("/buildr-form/{$form->id}", [
+            'f0' => 'Don', 'f1' => 'don@example.com', 'f2' => 'Hello there',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('sent='.$form->cssId(), $response->headers->get('Location'));
+
+        $submission = $page->formSubmissions()->first();
+        $this->assertSame('Don', $submission->payload['Name']);
+        $this->assertSame('don@example.com', $submission->payload['Email']);
+    }
+
+    public function test_form_required_field_rejects_empty(): void
+    {
+        $page = $this->pageWith('form');
+        $form = $page->nodes()->where('type', 'form')->first();
+
+        $this->from('/t')->post("/buildr-form/{$form->id}", ['f0' => '', 'f1' => ''])
+            ->assertRedirect('/t');
+
+        $this->assertSame(0, $page->formSubmissions()->count());
+    }
+}

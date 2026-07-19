@@ -1,0 +1,61 @@
+<?php
+
+namespace Buildr\Elements;
+
+use Buildr\Fields\Field;
+use Buildr\Support\Icons;
+
+class IconBox extends Element
+{
+    public static string $icon = 'icon-box';
+
+    public static function view(): string
+    {
+        return 'buildr::elements.icon_box';
+    }
+
+    public static function contentFields(): array
+    {
+        return [
+            Field::select('icon', Icons::options())->default('star'),
+            Field::text('heading')->default('Icon Box Title'),
+            Field::richtext('body')->default('<p>Describe the service or feature here in a sentence or two.</p>'),
+            Field::link('link'),
+            Field::select('layout', ['top' => 'Icon top', 'left' => 'Icon left'])->default('top')
+                ->buttons(['top' => 'v-top', 'left' => 'h-start']),
+        ];
+    }
+
+    public static function styleFields(): array
+    {
+        return [
+            Field::unit('icon_size', ['px', 'em'])->default(['value' => 32, 'unit' => 'px']),
+            Field::color('icon_color'),
+            Field::color('heading_color'),
+            Field::color('text_color'),
+            Field::color('background'),
+            Field::sides('border_radius', ['px', '%']),
+        ];
+    }
+
+    public function css(string $selector): array
+    {
+        $s = fn ($k, $d) => $this->node->setting('style', $k) ?: $d;
+        $size = $this->node->setting('style', 'icon_size');
+        $px = is_array($size) && ($size['value'] ?? null) !== null && $size['value'] !== ''
+            ? $size['value'].($size['unit'] ?? 'px') : '32px';
+        $left = $this->node->setting('content', 'layout') === 'left';
+
+        return array_filter([
+            $selector => array_filter([
+                'display' => 'flex',
+                'flex-direction' => $left ? 'row' : 'column',
+                'gap' => '12px',
+                'align-items' => $left ? 'flex-start' : null,
+            ]),
+            "{$selector} :where(.ib-icon svg)" => ['width' => $px, 'height' => $px, 'color' => $s('icon_color', '#1f2933')],
+            "{$selector} :where(h3)" => array_filter(['color' => $this->node->setting('style', 'heading_color')]),
+            "{$selector} :where(.ib-body)" => array_filter(['color' => $this->node->setting('style', 'text_color')]),
+        ], fn ($v) => $v !== []);
+    }
+}

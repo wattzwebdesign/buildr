@@ -554,6 +554,33 @@ class Editor extends Component
         $this->persistTab('content');
     }
 
+    public function addRepeaterItem(string $tab, string $key): void
+    {
+        $node = $this->node();
+        if (! $node) {
+            return;
+        }
+
+        $item = [];
+        foreach ($this->elementClass($node)::{$tab.'Fields'}() as $field) {
+            if ($field->key === $key && $field->type === 'repeater') {
+                foreach ($field->fields as $sub) {
+                    $item[$sub->key] = $sub->default;
+                }
+            }
+        }
+
+        $this->settings[$tab][$key][] = $item;
+        $this->persistTab($tab);
+    }
+
+    public function removeRepeaterItem(string $tab, string $key, int $index): void
+    {
+        unset($this->settings[$tab][$key][$index]);
+        $this->settings[$tab][$key] = array_values($this->settings[$tab][$key]);
+        $this->persistTab($tab);
+    }
+
     /** Change the unit on all four sides of a sides-control at once. */
     public function setSidesUnit(string $tab, string $key, string $unit, ?string $device = null): void
     {
@@ -673,6 +700,16 @@ class Editor extends Component
             ],
             'toggle' => (bool) $value,
             'columns' => is_array($value) && $value !== [] ? array_values($value) : [100],
+            'repeater' => (function () use ($value, $field) {
+                $items = is_array($value) ? array_values(array_filter($value, 'is_array')) : [];
+                foreach ($items as &$item) {
+                    foreach ($field->fields as $sub) {
+                        $item[$sub->key] ??= $sub->default;
+                    }
+                }
+
+                return $items;
+            })(),
             // scalar field types (text, select, color, …) must never hold
             // arrays — discard malformed/legacy-shaped stored values
             default => is_array($value) ? null : $value,

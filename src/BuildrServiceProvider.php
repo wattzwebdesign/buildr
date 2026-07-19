@@ -51,6 +51,10 @@ class BuildrServiceProvider extends ServiceProvider
             ]);
         })->name('buildr.placeholder');
 
+        \Illuminate\Support\Facades\Route::middleware(config('buildr.middleware', ['web']))
+            ->post('/buildr-form/{node}', \Buildr\Http\FormSubmissionController::class)
+            ->name('buildr.form.submit');
+
         \Illuminate\Support\Facades\Route::middleware(config('buildr.admin_middleware', ['web']))
             ->prefix(config('buildr.admin_path', 'buildr'))
             ->group(function () {

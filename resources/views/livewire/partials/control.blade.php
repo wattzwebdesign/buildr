@@ -165,6 +165,45 @@
       </div>
       @break
 
+    @case('repeater')
+      @php $items = data_get($settings, "{$tab}.{$key}", []); @endphp
+      <div class="rep">
+        @foreach ($items as $i => $item)
+          <div class="rep-item open" wire:key="rep-{{ $selectedId }}-{{ $key }}-{{ $i }}">
+            <div class="rep-head">
+              <span class="rep-title">#{{ $i + 1 }}</span>
+              <button type="button" class="act warn" style="margin-left:auto;color:var(--danger);font-size:11px"
+                      wire:click="removeRepeaterItem('{{ $tab }}', '{{ $key }}', {{ $i }})">Remove</button>
+            </div>
+            <div class="rep-body" style="display:block">
+              @foreach ($field['fields'] ?? [] as $sub)
+                @php $sbase = "settings.{$tab}.{$key}.{$i}.{$sub['key']}"; @endphp
+                <div class="fld" style="margin-top:10px;margin-bottom:0">
+                  @if ($sub['type'] !== 'toggle')<div class="fld-label">{{ $sub['label'] }}</div>@endif
+                  @if ($sub['type'] === 'select')
+                    <select class="in" wire:model.change="{{ $sbase }}">
+                      <option value="">—</option>
+                      @foreach ($sub['options'] ?? [] as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
+                    </select>
+                  @elseif (in_array($sub['type'], ['textarea', 'richtext']))
+                    <textarea class="in" rows="3" wire:model.live.debounce.400ms="{{ $sbase }}"></textarea>
+                  @elseif ($sub['type'] === 'toggle')
+                    <label class="togglerow" style="cursor:pointer"><span>{{ $sub['label'] }}</span>
+                      <input type="checkbox" wire:model.change="{{ $sbase }}"></label>
+                  @elseif ($sub['type'] === 'number')
+                    <input class="in" type="number" wire:model.live.debounce.400ms="{{ $sbase }}">
+                  @else
+                    <input class="in" wire:model.live.debounce.400ms="{{ $sbase }}">
+                  @endif
+                </div>
+              @endforeach
+            </div>
+          </div>
+        @endforeach
+        <button type="button" class="rep-add" wire:click="addRepeaterItem('{{ $tab }}', '{{ $key }}')">+ Add item</button>
+      </div>
+      @break
+
     @default
       <div class="fld-hint" style="padding:9px 11px;border:1px dashed var(--panel-line);border-radius:8px">
         {{ ucfirst($field['type']) }} control — coming with its element
