@@ -629,13 +629,17 @@ body{overflow:hidden}
           if (!id) return;
           const node = document.querySelector(`.page-frame [data-bnode="${id}"]`);
           if (!node) return;
+          const scoped = inp.dataset.mirrorTarget ? node.querySelector(inp.dataset.mirrorTarget) : null;
+          if (inp.dataset.mirrorTarget && !scoped) return;
           if (inp.dataset.mirrorMode === 'html') {
-            node.innerHTML = inp.value;
+            (scoped || node).innerHTML = inp.value;
           } else {
-            let target = node;
-            while (target.children.length === 1 && target.children[0].childElementCount === 0
-                   && ['A', 'SPAN'].includes(target.children[0].tagName)) {
-              target = target.children[0];
+            let target = scoped || node;
+            if (!scoped) {
+              while (target.children.length === 1 && target.children[0].childElementCount === 0
+                     && ['A', 'SPAN'].includes(target.children[0].tagName)) {
+                target = target.children[0];
+              }
             }
             target.textContent = inp.value;
           }

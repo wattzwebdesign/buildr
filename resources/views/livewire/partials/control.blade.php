@@ -4,9 +4,17 @@
     $responsive = $field['responsive'] ?? false;
     $base = "settings.{$tab}.{$key}".($responsive ? ".{$device}" : '');
     $units = $field['units'] ?? ['px'];
-    // Instant DOM mirroring is only safe when the field IS the element's
-    // entire visible text — composites (icon box etc.) would get wiped.
-    $mirrorSafe = in_array(($schema['key'] ?? '').':'.$key, ['heading:text', 'button:label', 'text:body'], true);
+    // Instant DOM mirroring: whole-element for single-text elements, or a
+    // scoped selector inside composites so siblings never get wiped.
+    $mirrorMap = [
+        'heading:text' => [null, 'text'],
+        'button:label' => [null, 'text'],
+        'text:body' => [null, 'html'],
+        'icon_box:heading' => ['h3', 'text'],
+        'icon_box:body' => ['.ib-body', 'html'],
+        'form:submit_label' => ['button[type=submit]', 'text'],
+    ];
+    $mirror = $mirrorMap[($schema['key'] ?? '').':'.$key] ?? null;
 @endphp
 
 <div class="fld" wire:key="fld-{{ $selectedId }}-{{ $tab }}-{{ $key }}-{{ $responsive ? $device : 'all' }}">
@@ -38,13 +46,13 @@
 
     @case('text')
       <input class="in" wire:model.live.debounce.400ms="{{ $base }}"
-             @if ($tab === 'content' && $mirrorSafe) data-mirror="{{ $key }}" data-mirror-mode="text" @endif>
+             @if ($tab === 'content' && $mirror) data-mirror="{{ $key }}" data-mirror-mode="text" @if ($mirror[0]) data-mirror-target="{{ $mirror[0] }}" @endif @endif>
       @break
 
     @case('textarea')
     @case('richtext')
       <textarea class="in" rows="4" wire:model.live.debounce.400ms="{{ $base }}"
-                @if ($tab === 'content' && $mirrorSafe) data-mirror="{{ $key }}" data-mirror-mode="{{ $field['type'] === 'richtext' ? 'html' : 'text' }}" @endif></textarea>
+                @if ($tab === 'content' && $mirror) data-mirror="{{ $key }}" data-mirror-mode="{{ $mirror[1] }}" @if ($mirror[0]) data-mirror-target="{{ $mirror[0] }}" @endif @endif></textarea>
       @break
 
     @case('code')
@@ -228,7 +236,21 @@
             </div>
             <div class="rep-body" style="display:block">
               @foreach ($field['fields'] ?? [] as $sub)
-                @php $sbase = "settings.{$tab}.{$key}.{$i}.{$sub['key']}"; @endphp
+                @php
+                  $sbase = "settings.{$tab}.{$key}.{$i}.{$sub['key']}";
+                  $repMirrorMap = [
+                      'accordion:items.title' => ['details:nth-of-type({n}) summary', 'text'],
+                      'accordion:items.body' => ['details:nth-of-type({n}) .acc-body', 'html'],
+                      'tabs:tabs.label' => ['.tb-labels label:nth-of-type({n})', 'text'],
+                      'tabs:tabs.body' => ['.tb-panels .tb-panel:nth-of-type({n})', 'html'],
+                      'icon_list:items.text' => ['li:nth-of-type({n}) span, li:nth-of-type({n}) a', 'text'],
+                      'form:fields.label' => ['form > div:nth-of-type({n}) label', 'text'],
+                  ];
+                  $subMirror = $repMirrorMap[($schema['key'] ?? '').':'.$key.'.'.$sub['key']] ?? null;
+                  $subAttrs = $subMirror
+                      ? 'data-mirror="'.$sub['key'].'" data-mirror-mode="'.$subMirror[1].'" data-mirror-target="'.str_replace('{n}', $i + 1, $subMirror[0]).'"'
+                      : '';
+                @endphp
                 <div class="fld" style="margin-top:10px;margin-bottom:0">
                   @if ($sub['type'] !== 'toggle')<div class="fld-label">{{ $sub['label'] }}</div>@endif
                   @if ($sub['type'] === 'select')
@@ -237,14 +259,14 @@
                       @foreach ($sub['options'] ?? [] as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach
                     </select>
                   @elseif (in_array($sub['type'], ['textarea', 'richtext']))
-                    <textarea class="in" rows="3" wire:model.live.debounce.400ms="{{ $sbase }}"></textarea>
+                    <textarea class="in" rows="3" {!! $subAttrs !!} wire:model.live.debounce.400ms="{{ $sbase }}"></textarea>
                   @elseif ($sub['type'] === 'toggle')
                     <label class="togglerow" style="cursor:pointer"><span>{{ $sub['label'] }}</span>
                       <input type="checkbox" class="tgi" wire:model.change="{{ $sbase }}"><span class="tg"></span></label>
                   @elseif ($sub['type'] === 'number')
                     <input class="in" type="number" wire:model.live.debounce.400ms="{{ $sbase }}">
                   @else
-                    <input class="in" wire:model.live.debounce.400ms="{{ $sbase }}">
+                    <input class="in" {!! $subAttrs !!} wire:model.live.debounce.400ms="{{ $sbase }}">
                   @endif
                 </div>
               @endforeach
