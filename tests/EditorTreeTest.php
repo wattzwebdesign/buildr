@@ -346,6 +346,34 @@ class EditorTreeTest extends TestCase
         $this->assertStringContainsString('justify-self:center', $css);
     }
 
+    public function test_legacy_bucket_columns_upgrade_to_column_containers_on_mount(): void
+    {
+        $page = Page::create(['title' => 'Legacy', 'slug' => 'legacy']);
+
+        // pre-column-model structure: elements directly inside a 2-col container
+        $container = $page->nodes()->create([
+            'type' => 'container', 'sort' => 0,
+            'data' => ['content' => ['widths' => [50, 50]]],
+        ]);
+        $page->nodes()->create(['type' => 'heading', 'parent_id' => $container->id, 'sort' => 0,
+            'data' => ['content' => ['text' => 'Hi', 'tag' => 'h2', '_col' => 0]]]);
+        $page->nodes()->create(['type' => 'button', 'parent_id' => $container->id, 'sort' => 1,
+            'data' => ['content' => ['label' => 'Go', '_col' => 0]]]);
+        $page->nodes()->create(['type' => 'image', 'parent_id' => $container->id, 'sort' => 2,
+            'data' => ['content' => ['src' => 'x.jpg', '_col' => 1]]]);
+
+        Livewire::test(Editor::class, ['page' => $page]); // mount runs the upgrade
+
+        $columns = $container->fresh()->children()->orderBy('sort')->get();
+        $this->assertSame(['container', 'container'], $columns->pluck('type')->all());
+        $this->assertSame(['heading', 'button'], $columns[0]->children()->orderBy('sort')->pluck('type')->all());
+        $this->assertSame(['image'], $columns[1]->children()->pluck('type')->all());
+
+        // idempotent: mounting again changes nothing
+        Livewire::test(Editor::class, ['page' => $page->fresh()]);
+        $this->assertSame(2, $container->fresh()->children()->count());
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

@@ -28,10 +28,74 @@ class Editor extends Component
     public function mount(Page $page): void
     {
         $this->page = $page;
+        $this->upgradeLegacyColumns();
 
         $first = $page->rootNodes()->first();
         if ($first) {
             $this->selectNode($first->id);
+        }
+    }
+
+    /**
+     * One-time upgrade: multi-column containers built before columns became
+     * real nodes hold elements directly (bucketed by _col). Convert each
+     * bucket into a proper column container so every column is stylable.
+     */
+    private function upgradeLegacyColumns(): void
+    {
+        $changed = false;
+
+        foreach ($this->page->nodes()->where('type', 'container')->get() as $container) {
+            $cols = count($container->data['content']['widths'] ?? [100]);
+            if ($cols < 2) {
+                continue;
+            }
+
+            $children = $container->children()->orderBy('sort')->get();
+
+            if ($children->isEmpty()) {
+                $this->makeColumns($container, $cols);
+                $changed = true;
+
+                continue;
+            }
+
+            if (! $children->contains(fn ($child) => $child->type !== 'container')) {
+                continue; // already column containers
+            }
+
+            $buckets = array_fill(0, $cols, []);
+            foreach ($children->values() as $i => $child) {
+                $col = min((int) ($child->data['content']['_col'] ?? ($i % $cols)), $cols - 1);
+                $buckets[$col][] = $child;
+            }
+
+            foreach ($buckets as $col => $bucket) {
+                if (count($bucket) === 1 && $bucket[0]->type === 'container') {
+                    $bucket[0]->update(['sort' => $col]);
+
+                    continue;
+                }
+
+                $column = $this->page->nodes()->create([
+                    'type' => 'container',
+                    'parent_id' => $container->id,
+                    'sort' => $col,
+                    'data' => $this->containerData(1, $col),
+                ]);
+
+                foreach ($bucket as $j => $child) {
+                    $data = $child->data ?? [];
+                    $data['content']['_col'] = 0;
+                    $child->update(['parent_id' => $column->id, 'sort' => $j, 'data' => $data]);
+                }
+            }
+
+            $changed = true;
+        }
+
+        if ($changed) {
+            $this->page->touch();
         }
     }
 
