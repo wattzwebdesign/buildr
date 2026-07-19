@@ -81,15 +81,20 @@ class Container extends Element
         $content = $this->node->settings('content');
         $widths = $content['widths'] ?? [100];
 
+        // Boxed max-width/centering applies to page-level sections only —
+        // on a nested container (a grid item) margin-inline:auto would eat
+        // the free space and shrink the column to its content.
+        $boxed = ($content['width_mode'] ?? 'boxed') === 'boxed' && $this->node->parent_id === null;
+
         $rules = [
             $selector => array_filter([
                 'display' => 'grid',
                 'grid-template-columns' => implode(' ', array_map(fn ($w) => $w.'fr', $widths)),
                 'align-items' => ($content['valign'] ?? 'stretch') !== 'stretch' ? $content['valign'] : null,
-                'max-width' => ($content['width_mode'] ?? 'boxed') === 'boxed'
+                'max-width' => $boxed
                     ? $this->unitValue($content['max_width'] ?? ['value' => 1160, 'unit' => 'px'])
                     : null,
-                'margin-inline' => ($content['width_mode'] ?? 'boxed') === 'boxed' ? 'auto' : null,
+                'margin-inline' => $boxed ? 'auto' : null,
             ]),
         ];
 

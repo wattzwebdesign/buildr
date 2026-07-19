@@ -191,6 +191,11 @@ class EditorTreeTest extends TestCase
         $this->assertSame(3, substr_count($html, 'data-bcontainer'));
         // …rendered bare as the grid item — no .bcol wrapper around a column container
         $this->assertSame(2, substr_count($html, 'Drop an element here'));
+
+        // only the ROOT container is boxed/centered — nested columns must
+        // stretch to fill their grid track
+        $css = app(PageRenderer::class)->render($page->fresh()->fill(['published_at' => now()]))['css'];
+        $this->assertSame(1, substr_count($css, 'margin-inline:auto'));
     }
 
     public function test_multiple_elements_stack_in_one_column(): void
