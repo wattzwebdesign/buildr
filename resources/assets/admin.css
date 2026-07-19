@@ -694,3 +694,7 @@ select.in::-ms-expand{display:none}
 
 /* the switch pill must not inherit the label span's flex-grow */
 .togglerow .tg{flex:0 0 34px;width:34px}
+
+/* number spinners: visible in dark mode (native glyphs are dark-on-dark) */
+input[type="number"]::-webkit-inner-spin-button{opacity:1}
+html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{filter:invert(1) brightness(1.4);opacity:.85}
