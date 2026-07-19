@@ -320,6 +320,26 @@ class EditorTreeTest extends TestCase
         $this->assertSame(0, $button->fresh()->data['content']['_col']);
     }
 
+    public function test_editing_button_label_does_not_force_full_width(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'button')
+            ->set('settings.content.label', 'Click here..');
+
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $this->assertStringContainsString('width:max-content', $css);
+        $this->assertStringNotContainsString('width:100%', $css);
+
+        // mobile-only full width emits a media-query override
+        $component->call('setDevice', 'mobile')->set('settings.content.full_width.mobile', true);
+        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $this->assertStringContainsString('width:max-content', $css);
+        $this->assertMatchesRegularExpression('/@media\(max-width:640px\).*width:100%/s', $css);
+    }
+
     public function test_flex_alignment_controls_compile(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new', 'published_at' => now()]);

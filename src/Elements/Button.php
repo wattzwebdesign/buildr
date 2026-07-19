@@ -24,17 +24,30 @@ class Button extends Element
 
     public function css(string $selector): array
     {
-        $full = (bool) $this->node->setting('content', 'full_width');
+        $stored = $this->node->setting('content', 'full_width');
+        $per = is_array($stored) ? $stored : ['desktop' => $stored];
+        $desktopFull = (bool) ($per['desktop'] ?? false);
 
-        return [
-            $selector => [
+        $size = fn (bool $full) => [
+            'width' => $full ? '100%' : 'max-content',
+            'justify-self' => $full ? 'stretch' : 'start',
+        ];
+
+        $rules = [
+            $selector => $size($desktopFull) + [
                 'display' => 'inline-block',
-                'width' => $full ? '100%' : 'max-content',
-                'justify-self' => $full ? 'stretch' : 'start',
                 'text-decoration' => 'none',
                 'text-align' => 'center',
             ],
         ];
+
+        foreach (['tablet', 'mobile'] as $device) {
+            if (isset($per[$device]) && (bool) $per[$device] !== $desktopFull) {
+                $rules['@'.$device][$selector] = $size((bool) $per[$device]);
+            }
+        }
+
+        return $rules;
     }
 
     public static function styleFields(): array
