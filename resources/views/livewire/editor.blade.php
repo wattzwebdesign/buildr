@@ -399,7 +399,13 @@ body{overflow:hidden}
           window.Livewire.all()[0]?.$wire.set(path, ''); this.open = false; },
       });
       window.iconPicker = (path, initial) => ({
-        open: false, pasteMode: false, pasted: '', q: '', value: initial, icons: {}, names: [],
+        open: false, pasteMode: false, pasted: '', q: '', value: initial, icons: {}, names: [], limit: 150,
+        more(e) {
+          const el = e.target;
+          if (el.scrollTop + el.clientHeight > el.scrollHeight - 300 && this.limit < this.filtered.length) {
+            this.limit += 180;
+          }
+        },
         get filtered() {
           const q = this.q.toLowerCase();
           return q ? this.names.filter(n => n.includes(q)) : this.names;

@@ -8,14 +8,14 @@
   <div x-show="open" x-cloak @click.outside="open = false" class="fp-pop" style="width:262px">
     <template x-if="!pasteMode">
       <div>
-        <input class="in" placeholder="Search icons…" x-model="q" x-ref="search" @click.stop>
-        <div class="ipk-grid">
-          <template x-for="n in filtered.slice(0, 120)" :key="n">
+        <input class="in" placeholder="Search icons…" x-model="q" x-ref="search" @click.stop @input="limit = 150">
+        <div class="ipk-grid" @scroll.passive="more($event)">
+          <template x-for="n in filtered.slice(0, limit)" :key="n">
             <button type="button" class="ipk-item" :title="n" @click="pick(n)" x-html="wrap(icons[n])"></button>
           </template>
         </div>
-        <div class="fld-hint" x-show="filtered.length > 120" style="padding:4px 2px"
-             x-text="`${filtered.length - 120} more — keep typing`"></div>
+        <div class="fld-hint" style="padding:4px 2px"
+             x-text="`${filtered.length} icons`"></div>
         <div style="display:flex;gap:6px;margin-top:8px">
           <button type="button" class="pl-edit" style="flex:1;text-align:center" @click="pasteMode = true">Paste SVG…</button>
           <button type="button" class="pl-edit" style="text-align:center" @click="pick('')">Clear</button>
