@@ -40,6 +40,7 @@ body{overflow:hidden}
 #el-tools button:hover{background:rgba(0,0,0,.14)}
 #el-tools svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #elt-drag{cursor:grab}
+.page-frame.child-hover .sec-tools{display:none}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
@@ -281,6 +282,13 @@ body{overflow:hidden}
             e.dataTransfer.setData('text/plain', 'buildr');
             return;
           }
+          if (e.target.closest('#elt-drag')) {
+            if (toolsFor) {
+              drag = { kind: 'move', id: toolsFor };
+              e.dataTransfer.setData('text/plain', 'buildr');
+            }
+            return;
+          }
           const el = e.target.closest('.page-frame [data-bnode][draggable]');
           if (el) {
             drag = { kind: 'move', id: parseInt(el.dataset.bnode) };
@@ -336,38 +344,38 @@ body{overflow:hidden}
 
         document.addEventListener('dragend', () => { clear(); drag = null; });
 
-        // Floating toolbar for child elements: drag handle / duplicate / delete
-        const tools = document.getElementById('el-tools');
+        // Floating toolbar for child elements: drag handle / duplicate / delete.
+        // Lazy lookups + delegation: the toolbar div renders after this script.
+        const tools = () => document.getElementById('el-tools');
         let toolsFor = null;
-        const hideTools = () => { tools.classList.remove('show'); toolsFor = null; };
+        const hideTools = () => { tools()?.classList.remove('show'); toolsFor = null; };
 
         document.addEventListener('mouseover', e => {
           if (e.target.closest('#el-tools')) return;
+          const t = tools();
+          const pf = document.querySelector('.page-frame');
           const el = e.target.closest('.page-frame [data-bnode][draggable]');
-          if (el) {
+          pf?.classList.toggle('child-hover', !!el); // suppress section chip over children
+          if (el && t) {
             toolsFor = parseInt(el.dataset.bnode);
             const r = el.getBoundingClientRect();
-            tools.style.left = Math.max(r.left, 60) + 'px';
-            tools.style.top = (r.top - 12) + 'px';
-            tools.classList.add('show');
+            t.style.left = Math.max(r.left, 60) + 'px';
+            t.style.top = (r.top - 12) + 'px';
+            t.classList.add('show');
           } else {
             hideTools();
           }
         });
         document.addEventListener('scroll', hideTools, true);
 
-        document.getElementById('elt-drag').addEventListener('dragstart', e => {
-          if (!toolsFor) return;
-          drag = { kind: 'move', id: toolsFor };
-          e.dataTransfer.setData('text/plain', 'buildr');
-        });
-        document.getElementById('elt-dup').addEventListener('click', () => {
-          if (toolsFor) wire()?.call('duplicateNode', toolsFor);
-          hideTools();
-        });
-        document.getElementById('elt-del').addEventListener('click', () => {
-          if (toolsFor && confirm('Delete this element?')) wire()?.call('deleteNode', toolsFor);
-          hideTools();
+        document.addEventListener('click', e => {
+          if (e.target.closest('#elt-dup')) {
+            if (toolsFor) wire()?.call('duplicateNode', toolsFor);
+            hideTools();
+          } else if (e.target.closest('#elt-del')) {
+            if (toolsFor && confirm('Delete this element?')) wire()?.call('deleteNode', toolsFor);
+            hideTools();
+          }
         });
 
         // Instant style preview: apply unit/side/color values as inline CSS
