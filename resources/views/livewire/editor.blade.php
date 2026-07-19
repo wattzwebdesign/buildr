@@ -30,6 +30,8 @@ body{overflow:hidden}
 .page-frame [data-bnode].drop-before{box-shadow:0 -3px 0 0 var(--accent) !important}
 .page-frame [data-bnode].drop-after{box-shadow:0 3px 0 0 var(--accent) !important}
 .page-frame [data-bnode][draggable]{cursor:grab}
+.addgap.drop-hot{height:36px !important;background:rgba(255,178,0,.12);outline:2px dashed var(--accent);outline-offset:-2px;border-radius:6px}
+.addgap.drop-hot button{opacity:1;transform:translateX(-50%) scale(1)}
 #el-tools{
   position:fixed;z-index:80;display:none;align-items:center;
   background:var(--accent);color:var(--accent-ink);border-radius:6px;overflow:hidden;
@@ -227,7 +229,7 @@ body{overflow:hidden}
         {!! '<style>'.\Buildr\Render\BaseCss::css().$rendered['css'].'</style>' !!}
 
         @forelse ($rendered['roots'] as $i => $root)
-          <div class="addgap">
+          <div class="addgap" data-gap-after="{{ $i === 0 ? 0 : $rendered['roots'][$i - 1]['id'] }}">
             <button data-tree title="Add section here"
                     wire:click="openLibrary({{ $i === 0 ? 0 : $rendered['roots'][$i - 1]['id'] }})">
               <svg class="ic" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -245,14 +247,14 @@ body{overflow:hidden}
             {!! $root['html'] !!}
           </section>
         @empty
-          <div style="padding:80px 40px;text-align:center;color:var(--muted);font-size:14px">
-            Empty page — add your first section from the library.
+          <div class="addgap" data-gap-after="0" style="height:auto;padding:80px 40px;text-align:center;color:var(--muted);font-size:14px">
+            Empty page — add your first section from the library, or drag anything here.
             <div style="margin-top:14px"><button data-tree class="btn-primary" style="margin:0 auto" wire:click="openLibrary">Open library</button></div>
           </div>
         @endforelse
 
         @if (count($rendered['roots']))
-          <div class="addgap" style="height:22px">
+          <div class="addgap" data-gap-after="{{ end($rendered['roots'])['id'] }}" style="height:22px">
             <button data-tree title="Add section at end" wire:click="openLibrary({{ end($rendered['roots'])['id'] }})">
               <svg class="ic" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
@@ -307,10 +309,11 @@ body{overflow:hidden}
         document.addEventListener('dragover', e => {
           if (!drag) return;
 
-          // moving: hovering another element shows a before/after line
+          // moving: hovering a NON-container element shows a before/after
+          // line; containers mean "drop INTO me" and fall through below
           if (drag.kind === 'move') {
             const el = e.target.closest('.page-frame [data-bnode][draggable]');
-            if (el && parseInt(el.dataset.bnode) !== drag.id) {
+            if (el && !el.dataset.bcontainer && parseInt(el.dataset.bnode) !== drag.id) {
               e.preventDefault();
               const rect = el.getBoundingClientRect();
               const before = e.clientY < rect.top + rect.height / 2;
@@ -319,6 +322,14 @@ body{overflow:hidden}
               el.classList.toggle('drop-after', !before);
               return;
             }
+          }
+
+          // page-level "+" gaps accept new containers/elements
+          const gap = e.target.closest('.addgap[data-gap-after]');
+          if (gap && drag.kind === 'new') {
+            e.preventDefault();
+            if (hotEl !== gap) { clear(); hotEl = gap; gap.classList.add('drop-hot'); }
+            return;
           }
 
           const target = colTarget(e);
@@ -336,6 +347,15 @@ body{overflow:hidden}
             e.preventDefault();
             const pos = lineEl.classList.contains('drop-before') ? 'before' : 'after';
             w?.call('moveNodeRelative', drag.id, parseInt(lineEl.dataset.bnode), pos);
+            return finish();
+          }
+
+          const gap = e.target.closest('.addgap[data-gap-after]');
+          if (gap && drag.kind === 'new') {
+            e.preventDefault();
+            const after = parseInt(gap.dataset.gapAfter);
+            if (drag.type === 'container') w?.call('dropContainerAt', drag.cols, after);
+            else w?.call('dropElementAt', drag.type, after);
             return finish();
           }
 

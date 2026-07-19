@@ -323,8 +323,24 @@ class Editor extends Component
         }
 
         $this->makeColumns($node, $cols);
+        $this->insertAfter = null; // one-shot page position
         $this->page->touch();
         $this->selectNode($node->id);
+    }
+
+    /** Drop a Layout card onto a page-level "+" gap. */
+    public function dropContainerAt(int $cols, int $afterRootId): void
+    {
+        $this->insertAfter = $afterRootId;
+        $this->addContainer($cols);
+    }
+
+    /** Drop an element onto a page-level "+" gap: new container wraps it. */
+    public function dropElementAt(string $type, int $afterRootId): void
+    {
+        $this->insertAfter = $afterRootId;
+        $this->addContainer(1);          // selects the new container
+        $this->addElement($type);
     }
 
     /**
