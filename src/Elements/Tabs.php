@@ -19,10 +19,10 @@ class Tabs extends Element
         return [
             Field::repeater('tabs', [
                 Field::text('label')->default('Tab'),
-                Field::richtext('body')->default('<p>Tab content.</p>'),
+                Field::richtext('body')->default('Tab content.'),
             ])->default([
-                ['label' => 'Tab one', 'body' => '<p>First tab content.</p>'],
-                ['label' => 'Tab two', 'body' => '<p>Second tab content.</p>'],
+                ['label' => 'Tab one', 'body' => 'First tab content.'],
+                ['label' => 'Tab two', 'body' => 'Second tab content.'],
             ]),
         ];
     }

@@ -148,6 +148,19 @@ class NewElementsTest extends TestCase
         $this->assertStringContainsString('color:var(--g-primary)', $compiled);
     }
 
+    public function test_richtext_plain_text_becomes_paragraphs_html_passes_through(): void
+    {
+        $this->assertSame(
+            '<p>First para</p><p>Line one<br>\nLine two</p>',
+            \Buildr\Support\Richtext::render("First para\n\nLine one\nLine two")
+        );
+        $this->assertSame(
+            '<p>Custom <strong>markup</strong></p>',
+            \Buildr\Support\Richtext::render('<p>Custom <strong>markup</strong></p>')
+        );
+        $this->assertSame('<p>Safe &lt;3 chars</p>', \Buildr\Support\Richtext::render('Safe <3 chars'));
+    }
+
     public function test_form_required_field_rejects_empty(): void
     {
         $page = $this->pageWith('form');

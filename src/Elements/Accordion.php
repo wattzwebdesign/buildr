@@ -19,10 +19,10 @@ class Accordion extends Element
         return [
             Field::repeater('items', [
                 Field::text('title')->default('Accordion title'),
-                Field::richtext('body')->default('<p>Accordion content goes here.</p>'),
+                Field::richtext('body')->default('Accordion content goes here.'),
             ])->default([
-                ['title' => 'What areas do you serve?', 'body' => '<p>Answer goes here.</p>'],
-                ['title' => 'How do estimates work?', 'body' => '<p>Answer goes here.</p>'],
+                ['title' => 'What areas do you serve?', 'body' => 'Answer goes here.'],
+                ['title' => 'How do estimates work?', 'body' => 'Answer goes here.'],
             ]),
             Field::toggle('exclusive')->label('One open at a time')->default(true),
             Field::toggle('first_open')->label('First item open')->default(true),

@@ -10,7 +10,7 @@
 @endphp
 <details{!! $dattrs !!}>
 <summary>{{ $item['title'] ?? '' }}</summary>
-<div class="acc-body">{!! $item['body'] ?? '' !!}</div>
+<div class="acc-body">{!! \Buildr\Support\Richtext::render($item['body'] ?? '') !!}</div>
 </details>
 @endforeach
 </div>

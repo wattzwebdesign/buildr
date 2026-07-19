@@ -19,7 +19,7 @@ class IconBox extends Element
         return [
             Field::select('icon', Icons::options())->default('star'),
             Field::text('heading')->default('Icon Box Title'),
-            Field::richtext('body')->default('<p>Describe the service or feature here in a sentence or two.</p>'),
+            Field::richtext('body')->default('Describe the service or feature here in a sentence or two.'),
             Field::link('link'),
             Field::select('layout', ['top' => 'Icon top', 'left' => 'Icon left'])->default('top')
                 ->buttons(['top' => 'v-top', 'left' => 'h-start']),

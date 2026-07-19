@@ -13,7 +13,7 @@
 </div>
 <div class="tb-panels">
 @foreach (($tabs ?? []) as $tab)
-<div class="tb-panel">{!! $tab['body'] ?? '' !!}</div>
+<div class="tb-panel">{!! \Buildr\Support\Richtext::render($tab['body'] ?? '') !!}</div>
 @endforeach
 </div>
 </div>
