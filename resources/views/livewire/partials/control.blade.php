@@ -19,12 +19,12 @@
   @switch($field['type'])
 
     @case('text')
-      <input class="in" wire:model.blur="{{ $base }}">
+      <input class="in" wire:model.live.debounce.400ms="{{ $base }}">
       @break
 
     @case('textarea')
     @case('richtext')
-      <textarea class="in" rows="4" wire:model.blur="{{ $base }}"></textarea>
+      <textarea class="in" rows="4" wire:model.live.debounce.400ms="{{ $base }}"></textarea>
       @break
 
     @case('code')
@@ -32,7 +32,7 @@
       @break
 
     @case('number')
-      <input class="in" type="number" wire:model.blur="{{ $base }}">
+      <input class="in" type="number" wire:model.live.debounce.400ms="{{ $base }}">
       @break
 
     @case('select')
@@ -90,7 +90,7 @@
 
     @case('unit')
       <div class="unit-wrap">
-        <input class="in" type="number" step="any" wire:model.blur="{{ $base }}.value">
+        <input class="in" type="number" step="any" wire:model.live.debounce.400ms="{{ $base }}.value">
         <select class="unit-sel" wire:model.change="{{ $base }}.unit">
           @foreach ($units as $unit)
             <option value="{{ $unit }}">{{ $unit === '' ? '—' : $unit }}</option>
@@ -102,7 +102,7 @@
     @case('color')
       <div class="colorrow">
         <input type="color" class="cp" wire:model.live="{{ $base }}">
-        <input class="in hex mono" placeholder="none" wire:model.blur="{{ $base }}">
+        <input class="in hex mono" placeholder="none" wire:model.live.debounce.400ms="{{ $base }}">
       </div>
       @break
 
@@ -112,7 +112,7 @@
           <div>
             <input class="in" type="number" step="any" title="{{ ucfirst($side) }}"
                    style="padding:9px 6px;text-align:center"
-                   wire:model.blur="{{ $base }}.{{ $side }}.value">
+                   wire:model.live.debounce.400ms="{{ $base }}.{{ $side }}.value">
             <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--muted-2);margin-top:3px">{{ $abbr }}</div>
           </div>
         @endforeach
@@ -127,7 +127,7 @@
 
     @case('link')
       <div class="linkfld">
-        <input class="in url mono" placeholder="/page or https://…" wire:model.blur="{{ $base }}.url">
+        <input class="in url mono" placeholder="/page or https://…" wire:model.live.debounce.400ms="{{ $base }}.url">
         <label class="togglerow" style="cursor:pointer">
           <span>Open in new tab</span>
           <input type="checkbox" wire:model.change="{{ $base }}.new_tab">
@@ -136,7 +136,7 @@
       @break
 
     @case('media')
-      <input class="in mono" placeholder="https://…/image.jpg" wire:model.blur="{{ $base }}">
+      <input class="in mono" placeholder="https://…/image.jpg" wire:model.live.debounce.400ms="{{ $base }}">
       <div class="fld-hint">Paste an image URL — media library lands in a later stage.</div>
       @break
 
@@ -155,7 +155,7 @@
         @foreach ($widths as $i => $w)
           <div class="wnum-wrap">
             <input class="in wnum" type="number" min="5" max="95"
-                   wire:model.blur="settings.content.widths.{{ $i }}">
+                   wire:model.live.debounce.400ms="settings.content.widths.{{ $i }}">
             <span>%</span>
           </div>
         @endforeach
