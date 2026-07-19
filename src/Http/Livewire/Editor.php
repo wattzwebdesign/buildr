@@ -270,6 +270,51 @@ class Editor extends Component
         $this->showNav = ! $this->showNav;
     }
 
+    /* ---------- site settings (globals) ---------- */
+
+    public array $site = [];
+
+    public function openSite(): void
+    {
+        $this->view = 'site';
+        $this->site = [
+            'name' => \Buildr\Models\SiteSetting::get('name', ''),
+            'phone' => \Buildr\Models\SiteSetting::get('phone', ''),
+            'email' => \Buildr\Models\SiteSetting::get('email', ''),
+            'address' => \Buildr\Models\SiteSetting::get('address', ''),
+            'colors' => \Buildr\Models\SiteSetting::get('colors', [
+                ['name' => 'Primary', 'value' => '#1f2933'],
+                ['name' => 'Accent', 'value' => '#2563eb'],
+            ]),
+            'font_heading' => \Buildr\Models\SiteSetting::get('font_heading', ''),
+            'font_heading_weight' => \Buildr\Models\SiteSetting::get('font_heading_weight', ''),
+            'font_body' => \Buildr\Models\SiteSetting::get('font_body', ''),
+            'font_body_weight' => \Buildr\Models\SiteSetting::get('font_body_weight', ''),
+            'base_size' => \Buildr\Models\SiteSetting::get('base_size', ''),
+        ];
+    }
+
+    public function updatedSite(): void
+    {
+        foreach ($this->site as $key => $value) {
+            \Buildr\Models\SiteSetting::set($key, $value);
+        }
+        $this->page->touch(); // bust page cache so globals recompile
+    }
+
+    public function addGlobalColor(): void
+    {
+        $this->site['colors'][] = ['name' => 'Color '.(count($this->site['colors']) + 1), 'value' => '#888888'];
+        $this->updatedSite();
+    }
+
+    public function removeGlobalColor(int $index): void
+    {
+        unset($this->site['colors'][$index]);
+        $this->site['colors'] = array_values($this->site['colors']);
+        $this->updatedSite();
+    }
+
     private const COL_WIDTHS = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]];
 
     /** New containers ship with 10px padding on every side (Elementor-style). */
@@ -753,6 +798,7 @@ class Editor extends Component
             'library' => $library,
             'tree' => $tree,
             'isChild' => (bool) $node?->parent_id,
+            'globalSwatches' => \Buildr\Render\GlobalCss::swatches(),
         ])->title("Buildr — {$this->page->title}");
     }
 }

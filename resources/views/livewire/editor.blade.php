@@ -7,6 +7,17 @@
         'button' => '<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 12h8"/>',
         'divider' => '<line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="3 3"/>',
         'spacer' => '<path d="M12 5v14M8 8l4-3 4 3M8 16l4 3 4-3"/>',
+        'video' => '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3z"/>',
+        'map' => '<path d="M12 21s-7-5.3-7-11a7 7 0 0 1 14 0c0 5.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+        'code' => '<path d="m8 8-4 4 4 4M16 8l4 4-4 4"/>',
+        'star' => '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+        'icon-box' => '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="9" r="2.5"/><path d="M8 16h8"/>',
+        'list' => '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/>',
+        'share' => '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.3 10.8 7.4-3.6M8.3 13.2l7.4 3.6"/>',
+        'accordion' => '<rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="12" width="18" height="8" rx="1.5"/><path d="m10 15.5 2 2 2-2"/>',
+        'tabs' => '<path d="M3 9h18v11H3z"/><path d="M3 9V5h6l2 4"/>',
+        'gallery' => '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+        'form' => '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M6 7h6"/>',
         default => '<rect x="4" y="4" width="16" height="16" rx="2"/>',
     };
 @endphp
@@ -128,6 +139,45 @@ body{overflow:hidden}
           Elements: click to add to the selected container, or <b>drag onto any column</b> in the canvas.
         </div>
       </div>
+    @elseif ($view === 'site')
+      <!-- ============ SITE SETTINGS ============ -->
+      <div class="controls">
+        <button class="lib-back" wire:click="closeLibrary">
+          <svg class="ic" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M5 12h14"/></svg> Back to editing
+        </button>
+
+        <div class="ctl-group"><span>Site</span></div>
+        <div class="fld"><div class="fld-label">Site name</div><input class="in" wire:model.blur="site.name"></div>
+        <div class="fld"><div class="fld-label">Phone</div><input class="in" wire:model.blur="site.phone">
+          <div class="fld-hint">Available anywhere as <span class="mono">@{{site.phone}}</span></div></div>
+        <div class="fld"><div class="fld-label">Email</div><input class="in" wire:model.blur="site.email"></div>
+        <div class="fld"><div class="fld-label">Address</div><input class="in" wire:model.blur="site.address"></div>
+
+        <div class="ctl-group"><span>Global Colors</span></div>
+        @foreach ($site['colors'] ?? [] as $i => $color)
+          <div class="fld" wire:key="gcolor-{{ $i }}" style="display:flex;gap:8px;align-items:center">
+            <input type="color" class="cp" wire:model.live="site.colors.{{ $i }}.value">
+            <input class="in" style="flex:1" wire:model.blur="site.colors.{{ $i }}.name">
+            <input class="in hex mono" style="width:86px" wire:model.blur="site.colors.{{ $i }}.value">
+            <button type="button" style="color:var(--danger);font-size:14px" wire:click="removeGlobalColor({{ $i }})">✕</button>
+          </div>
+        @endforeach
+        <button type="button" class="rep-add" wire:click="addGlobalColor">+ Add global color</button>
+        <div class="fld-hint" style="margin-top:8px">Globals become CSS variables — every color picker shows them as quick swatches. Change one here, it updates site-wide.</div>
+
+        <div class="ctl-group"><span>Global Fonts</span></div>
+        <div class="fld"><div class="fld-label">Heading font (Google Fonts name)</div>
+          <div class="unit-wrap"><input class="in" placeholder="e.g. Fraunces" wire:model.blur="site.font_heading">
+          <select class="unit-sel" style="width:70px" wire:model.change="site.font_heading_weight">
+            <option value="">wt</option>@foreach ([300,400,500,600,700,800] as $w)<option>{{ $w }}</option>@endforeach
+          </select></div></div>
+        <div class="fld"><div class="fld-label">Body font (Google Fonts name)</div>
+          <div class="unit-wrap"><input class="in" placeholder="e.g. Archivo" wire:model.blur="site.font_body">
+          <select class="unit-sel" style="width:70px" wire:model.change="site.font_body_weight">
+            <option value="">wt</option>@foreach ([300,400,500,600] as $w)<option>{{ $w }}</option>@endforeach
+          </select></div></div>
+        <div class="fld"><div class="fld-label">Base font size (px)</div><input class="in" type="number" wire:model.blur="site.base_size" placeholder="16"></div>
+      </div>
     @else
       <!-- ============ EDIT PANEL ============ -->
       <div class="panel-context">
@@ -168,6 +218,9 @@ body{overflow:hidden}
         $isDirty = ! $page->published_at || $page->updated_at->gt($page->published_at);
     @endphp
     <div class="panel-foot">
+      <button class="pf-btn {{ $view === 'site' ? 'on' : '' }}" wire:click="openSite" title="Site Settings" style="display:grid;place-items:center">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
+      </button>
       <button class="pf-btn {{ $showNav ? 'on' : '' }}" wire:click="toggleNav" title="Navigator" style="display:grid;place-items:center">
         <svg class="ic" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
@@ -226,7 +279,8 @@ body{overflow:hidden}
              const s = $event.target.closest('.pv-sec');
              if (s) $wire.selectNode(parseInt(s.dataset.root));
            ">
-        {!! '<style>'.\Buildr\Render\BaseCss::css().$rendered['css'].'</style>' !!}
+        {!! \Buildr\Render\GlobalCss::fontLink() !!}
+        {!! '<style>'.\Buildr\Render\BaseCss::css().\Buildr\Render\GlobalCss::css().$rendered['css'].'</style>' !!}
 
         @forelse ($rendered['roots'] as $i => $root)
           <div class="addgap" data-gap-after="{{ $i === 0 ? 0 : $rendered['roots'][$i - 1]['id'] }}">

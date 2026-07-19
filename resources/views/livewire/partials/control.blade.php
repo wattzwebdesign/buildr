@@ -106,6 +106,14 @@
         <input type="color" class="cp" data-livecss="{{ $key }}" wire:model.live="{{ $base }}">
         <input class="in hex mono" placeholder="none" data-livecss="{{ $key }}" wire:model.live.debounce.400ms="{{ $base }}">
       </div>
+      @if (!empty($globalSwatches))
+        <div class="swatches mini" style="margin-top:6px">
+          @foreach ($globalSwatches as $sw)
+            <button type="button" class="sw" style="background:{{ $sw['value'] }}" title="{{ $sw['name'] }} — links to global"
+                    wire:click="$set('{{ $base }}', '{{ $sw['var'] }}')"></button>
+          @endforeach
+        </div>
+      @endif
       @break
 
     @case('sides')

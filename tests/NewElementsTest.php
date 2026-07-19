@@ -117,6 +117,37 @@ class NewElementsTest extends TestCase
         $this->assertSame('don@example.com', $submission->payload['Email']);
     }
 
+    public function test_global_colors_and_fonts_compile_to_css_layer(): void
+    {
+        \Buildr\Models\SiteSetting::set('colors', [
+            ['name' => 'Primary', 'value' => '#14324f'],
+            ['name' => 'Accent', 'value' => '#e8a33d'],
+        ]);
+        \Buildr\Models\SiteSetting::set('font_heading', 'Fraunces');
+        \Buildr\Models\SiteSetting::set('font_heading_weight', 600);
+        \Buildr\Models\SiteSetting::set('font_body', 'Archivo');
+
+        $css = \Buildr\Render\GlobalCss::css();
+        $this->assertStringContainsString('--g-primary:#14324f', $css);
+        $this->assertStringContainsString('--g-accent:#e8a33d', $css);
+        $this->assertStringContainsString('font-family:"Fraunces"', $css);
+        $this->assertStringContainsString('font-family:"Archivo"', $css);
+
+        $link = \Buildr\Render\GlobalCss::fontLink();
+        $this->assertStringContainsString('fonts.googleapis.com', $link);
+        $this->assertStringContainsString('Fraunces', $link);
+
+        // element referencing a global var renders it through the compiler
+        $page = $this->pageWith('heading');
+        $heading = $page->nodes()->where('type', 'heading')->first();
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $heading->id)
+            ->set('settings.style.color', 'var(--g-primary)');
+
+        $compiled = app(PageRenderer::class)->render($page->fresh())['css'];
+        $this->assertStringContainsString('color:var(--g-primary)', $compiled);
+    }
+
     public function test_form_required_field_rejects_empty(): void
     {
         $page = $this->pageWith('form');
