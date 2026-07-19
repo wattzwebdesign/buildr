@@ -30,6 +30,16 @@ body{overflow:hidden}
 .page-frame [data-bnode].drop-before{box-shadow:0 -3px 0 0 var(--accent) !important}
 .page-frame [data-bnode].drop-after{box-shadow:0 3px 0 0 var(--accent) !important}
 .page-frame [data-bnode][draggable]{cursor:grab}
+#el-tools{
+  position:fixed;z-index:80;display:none;align-items:center;
+  background:var(--accent);color:var(--accent-ink);border-radius:6px;overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);
+}
+#el-tools.show{display:flex}
+#el-tools button{width:26px;height:24px;display:grid;place-items:center;transition:.12s}
+#el-tools button:hover{background:rgba(0,0,0,.14)}
+#el-tools svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#elt-drag{cursor:grab}
 @if ($selectedId && $isChild)
 .page-frame [data-bnode="{{ $selectedId }}"]{outline:2px solid var(--accent) !important;outline-offset:2px}
 @endif
@@ -326,6 +336,40 @@ body{overflow:hidden}
 
         document.addEventListener('dragend', () => { clear(); drag = null; });
 
+        // Floating toolbar for child elements: drag handle / duplicate / delete
+        const tools = document.getElementById('el-tools');
+        let toolsFor = null;
+        const hideTools = () => { tools.classList.remove('show'); toolsFor = null; };
+
+        document.addEventListener('mouseover', e => {
+          if (e.target.closest('#el-tools')) return;
+          const el = e.target.closest('.page-frame [data-bnode][draggable]');
+          if (el) {
+            toolsFor = parseInt(el.dataset.bnode);
+            const r = el.getBoundingClientRect();
+            tools.style.left = Math.max(r.left, 60) + 'px';
+            tools.style.top = (r.top - 12) + 'px';
+            tools.classList.add('show');
+          } else {
+            hideTools();
+          }
+        });
+        document.addEventListener('scroll', hideTools, true);
+
+        document.getElementById('elt-drag').addEventListener('dragstart', e => {
+          if (!toolsFor) return;
+          drag = { kind: 'move', id: toolsFor };
+          e.dataTransfer.setData('text/plain', 'buildr');
+        });
+        document.getElementById('elt-dup').addEventListener('click', () => {
+          if (toolsFor) wire()?.call('duplicateNode', toolsFor);
+          hideTools();
+        });
+        document.getElementById('elt-del').addEventListener('click', () => {
+          if (toolsFor && confirm('Delete this element?')) wire()?.call('deleteNode', toolsFor);
+          hideTools();
+        });
+
         // Instant style preview: apply unit/side/color values as inline CSS
         // on the selected node; the server render confirms and replaces it.
         const CSSMAP = {
@@ -409,6 +453,19 @@ body{overflow:hidden}
         });
       })();
     </script>
+
+    <!-- floating element toolbar (positioned by JS on hover) -->
+    <div id="el-tools">
+      <button id="elt-drag" draggable="true" title="Drag to move">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+      </button>
+      <button id="elt-dup" title="Duplicate">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      </button>
+      <button id="elt-del" title="Delete">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
+      </button>
+    </div>
 
     <!-- NAVIGATOR -->
     @if ($showNav)

@@ -326,7 +326,7 @@ textarea.in{resize:vertical;line-height:1.5}
   background:var(--accent);color:var(--accent-ink);border-radius:0 0 8px 0;overflow:hidden;
   font-weight:700;font-size:10.5px;letter-spacing:.04em;box-shadow:0 4px 14px rgba(0,0,0,.25);
 }
-.pv-sec:hover .sec-tools,.pv-sec.sel .sec-tools{display:flex}
+.pv-sec:hover .sec-tools{display:flex}
 .sec-tools .lbl{padding:5px 10px;font-family:"JetBrains Mono",monospace;text-transform:uppercase;font-size:9.5px}
 .sec-tools button{width:26px;height:24px;display:grid;place-items:center;transition:.12s}
 .sec-tools button:hover{background:rgba(0,0,0,.14)}
