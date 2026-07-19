@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $page->seo_title ?? $page->title }}</title>
 @if($page->seo_description)<meta name="description" content="{{ $page->seo_description }}">@endif
-<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%;height:auto;display:block}.bcol{display:flex;flex-direction:column;gap:12px;min-width:0}{!! $css !!}</style>
+<style>{!! \Buildr\Render\BaseCss::css() !!}{!! $css !!}</style>
 </head>
-<body>
+<body class="buildr-page">
 {!! $html !!}
 </body>
 </html>

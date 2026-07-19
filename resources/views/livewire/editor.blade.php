@@ -213,7 +213,7 @@ body{overflow:hidden}
     </div>
 
     <div class="canvas-scroll">
-      <div class="page-frame"
+      <div class="page-frame buildr-page"
            x-data
            @click.prevent="
              const btn = $event.target.closest('[data-tree]'); if (btn) return;
@@ -224,7 +224,7 @@ body{overflow:hidden}
              const s = $event.target.closest('.pv-sec');
              if (s) $wire.selectNode(parseInt(s.dataset.root));
            ">
-        {!! '<style>'.$rendered['css'].'</style>' !!}
+        {!! '<style>'.\Buildr\Render\BaseCss::css().$rendered['css'].'</style>' !!}
 
         @forelse ($rendered['roots'] as $i => $root)
           <div class="addgap">

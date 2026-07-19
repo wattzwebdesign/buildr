@@ -98,6 +98,22 @@ class RenderTest extends TestCase
         $this->assertStringContainsString('Call (410) 555-0114', $html);
     }
 
+    public function test_public_page_and_editor_share_the_same_base_css(): void
+    {
+        $page = $this->makePage();
+
+        // public route ships the base layer + the buildr-page scope class
+        $response = $this->get('/home');
+        $response->assertOk()
+            ->assertSee('class="buildr-page"', false)
+            ->assertSee('.buildr-page h1{font-size:40px', false);
+
+        // the editor canvas ships the exact same base string
+        $this->get("/buildr/pages/{$page->id}/edit")
+            ->assertOk()
+            ->assertSee('.buildr-page h1{font-size:40px', false);
+    }
+
     public function test_hidden_nodes_are_skipped(): void
     {
         $page = Page::create(['title' => 'T', 'slug' => 't']);
