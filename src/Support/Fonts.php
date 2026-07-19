@@ -14,6 +14,12 @@ final class Fonts
         'Rubik', 'Sora', 'Source Sans 3', 'Space Grotesk', 'Work Sans', 'JetBrains Mono',
     ];
 
+    /** Flat ordered list for the searchable picker: favorites first. */
+    public static function picker(): array
+    {
+        return array_values(array_unique(array_merge(self::LIST, GoogleFonts::LIST)));
+    }
+
     public static function options(string $emptyLabel = 'Default'): array
     {
         $rest = array_values(array_diff(GoogleFonts::LIST, self::LIST));

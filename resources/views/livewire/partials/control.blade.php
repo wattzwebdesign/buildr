@@ -73,6 +73,9 @@
             </button>
           @endforeach
         </div>
+      @elseif (count($field['options'] ?? []) > 100)
+        @php $fpCurrent = data_get($settings, str_replace('settings.', '', $base)); @endphp
+        @include('buildr::livewire.partials.fontpicker', ['path' => $base, 'current' => is_scalar($fpCurrent) ? $fpCurrent : ''])
       @else
         <select class="in" wire:model.change="{{ $base }}">
           <option value="">—</option>

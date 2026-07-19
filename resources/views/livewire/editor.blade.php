@@ -164,16 +164,12 @@ body{overflow:hidden}
 
         <div class="ctl-group"><span>Global Fonts</span></div>
         <div class="fld"><div class="fld-label">Heading font</div>
-          <div class="unit-wrap"><select class="in" wire:model.change="site.font_heading">
-            @foreach (\Buildr\Support\Fonts::options('Default (system)') as $fv => $fl)<option value="{{ $fv }}">{{ $fl }}</option>@endforeach
-          </select>
+          <div class="unit-wrap"><div style="flex:1;min-width:0">@include('buildr::livewire.partials.fontpicker', ['path' => 'site.font_heading', 'current' => $site['font_heading'] ?? ''])</div>
           <select class="unit-sel" style="width:70px" wire:model.change="site.font_heading_weight">
             <option value="">wt</option>@foreach ([300,400,500,600,700,800] as $w)<option>{{ $w }}</option>@endforeach
           </select></div></div>
         <div class="fld"><div class="fld-label">Body font</div>
-          <div class="unit-wrap"><select class="in" wire:model.change="site.font_body">
-            @foreach (\Buildr\Support\Fonts::options('Default (system)') as $fv => $fl)<option value="{{ $fv }}">{{ $fl }}</option>@endforeach
-          </select>
+          <div class="unit-wrap"><div style="flex:1;min-width:0">@include('buildr::livewire.partials.fontpicker', ['path' => 'site.font_body', 'current' => $site['font_body'] ?? ''])</div>
           <select class="unit-sel" style="width:70px" wire:model.change="site.font_body_weight">
             <option value="">wt</option>@foreach ([300,400,500,600] as $w)<option>{{ $w }}</option>@endforeach
           </select></div></div>
@@ -319,6 +315,30 @@ body{overflow:hidden}
     </div>
 
     <script data-navigate-once>
+      window.__buildrFonts = @js(\Buildr\Support\Fonts::picker());
+      window.__loadedFonts = window.__loadedFonts || new Set();
+      window.loadPreviewFont = (f) => {
+        if (!f || window.__loadedFonts.has(f)) return;
+        window.__loadedFonts.add(f);
+        const l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(f)
+               + '&text=' + encodeURIComponent(f + 'Default') + '&display=swap';
+        document.head.appendChild(l);
+      };
+      window.fontPicker = (path, initial) => ({
+        open: false, q: '', value: initial,
+        get filtered() {
+          const q = this.q.toLowerCase();
+          return q ? window.__buildrFonts.filter(f => f.toLowerCase().includes(q)) : window.__buildrFonts;
+        },
+        toggle() { this.open = !this.open; if (this.open) this.$nextTick(() => this.$refs.search?.focus()); },
+        pick(f) {
+          this.value = f; this.open = false; this.q = '';
+          window.Livewire.all()[0]?.$wire.set(path, f);
+          if (f) window.loadPreviewFont(f);
+        },
+      });
       (() => {
         if (window.__buildrDnd) return;
         window.__buildrDnd = true;
