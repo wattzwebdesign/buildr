@@ -34,6 +34,10 @@ class Editor extends Component
         if ($first) {
             $this->selectNode($first->id);
         }
+
+        // Home view is the element picker, Elementor-style — clicking
+        // anything in the canvas switches to its edit panel.
+        $this->view = 'library';
     }
 
     /**

@@ -31,8 +31,8 @@ class EditorTest extends TestCase
 
         $this->get("/buildr/pages/{$page->id}/edit")
             ->assertOk()
-            ->assertSee('Original headline')
-            ->assertSee('Editing · Home');
+            ->assertSee('Original headline')   // canvas renders
+            ->assertSee('Search elements');    // library is the home view
     }
 
     public function test_selecting_a_node_loads_normalized_settings(): void
