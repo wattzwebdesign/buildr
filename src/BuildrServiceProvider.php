@@ -16,6 +16,29 @@ class BuildrServiceProvider extends ServiceProvider
 
         $this->app->singleton(ElementRegistry::class, function ($app) {
             $registry = new ElementRegistry();
+            // Core roster lives HERE, not in the publishable config — a
+            // site's published config must never pin/hide core elements
+            // added by package updates. Config lists per-site EXTRAS only.
+            $registry->registerMany([
+                \Buildr\Elements\Container::class,
+                \Buildr\Elements\Heading::class,
+                \Buildr\Elements\Text::class,
+                \Buildr\Elements\Image::class,
+                \Buildr\Elements\Button::class,
+                \Buildr\Elements\Divider::class,
+                \Buildr\Elements\Spacer::class,
+                \Buildr\Elements\Video::class,
+                \Buildr\Elements\GoogleMap::class,
+                \Buildr\Elements\Html::class,
+                \Buildr\Elements\StarRating::class,
+                \Buildr\Elements\IconBox::class,
+                \Buildr\Elements\IconList::class,
+                \Buildr\Elements\SocialIcons::class,
+                \Buildr\Elements\Accordion::class,
+                \Buildr\Elements\Tabs::class,
+                \Buildr\Elements\Gallery::class,
+                \Buildr\Elements\Form::class,
+            ]);
             $registry->registerMany(config('buildr.elements', []));
             $registry->registerMany(config('buildr.blocks', []));
 

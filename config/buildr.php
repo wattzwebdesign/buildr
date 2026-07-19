@@ -1,7 +1,5 @@
 <?php
 
-use Buildr\Elements;
-
 return [
 
     /*
@@ -28,30 +26,14 @@ return [
         'mobile' => 640,
     ],
 
+
+
     /*
-    | Core element roster. Per-site coded blocks are auto-discovered from
-    | app/Blocks (namespace App\Blocks) and may also be listed in 'blocks'.
+    | EXTRA element classes for this site — core elements ship with the
+    | package and register automatically, so package updates can add new
+    | ones without touching this file. Coded section blocks go in 'blocks'.
     */
-    'elements' => [
-        Elements\Container::class,
-        Elements\Heading::class,
-        Elements\Text::class,
-        Elements\Image::class,
-        Elements\Button::class,
-        Elements\Divider::class,
-        Elements\Spacer::class,
-        Elements\Video::class,
-        Elements\GoogleMap::class,
-        Elements\Html::class,
-        Elements\StarRating::class,
-        Elements\IconBox::class,
-        Elements\IconList::class,
-        Elements\SocialIcons::class,
-        Elements\Accordion::class,
-        Elements\Tabs::class,
-        Elements\Gallery::class,
-        Elements\Form::class,
-    ],
+    'elements' => [],
 
     'blocks' => [],
 
