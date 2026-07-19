@@ -14,7 +14,45 @@
 </head>
 <body>
 {{ $slot }}
+<div id="bcf" class="bcf-overlay" style="display:none">
+  <div class="bcf-modal">
+    <div class="bcf-msg" id="bcf-msg"></div>
+    <div class="bcf-actions">
+      <button type="button" class="bcf-btn" id="bcf-cancel">Cancel</button>
+      <button type="button" class="bcf-btn ok" id="bcf-ok">OK</button>
+    </div>
+  </div>
+</div>
 <script>
+window.bConfirm = (msg, opts = {}) => new Promise(resolve => {
+  const overlay = document.getElementById('bcf');
+  const okBtn = document.getElementById('bcf-ok');
+  const cancelBtn = document.getElementById('bcf-cancel');
+  document.getElementById('bcf-msg').textContent = msg;
+  okBtn.textContent = opts.okText || (opts.danger ? 'Delete' : 'OK');
+  okBtn.classList.toggle('danger', !!opts.danger);
+  overlay.style.display = 'flex';
+
+  const done = v => {
+    overlay.style.display = 'none';
+    okBtn.removeEventListener('click', onOk);
+    cancelBtn.removeEventListener('click', onCancel);
+    document.removeEventListener('keydown', onKey);
+    overlay.removeEventListener('mousedown', onBack);
+    resolve(v);
+  };
+  const onOk = () => done(true);
+  const onCancel = () => done(false);
+  const onKey = e => { if (e.key === 'Escape') onCancel(); if (e.key === 'Enter') onOk(); };
+  const onBack = e => { if (e.target === overlay) onCancel(); };
+
+  okBtn.addEventListener('click', onOk);
+  cancelBtn.addEventListener('click', onCancel);
+  document.addEventListener('keydown', onKey);
+  overlay.addEventListener('mousedown', onBack);
+  okBtn.focus();
+});
+
 document.addEventListener('click', e => {
     const btn = e.target.closest('[data-theme-toggle]');
     if (!btn) return;

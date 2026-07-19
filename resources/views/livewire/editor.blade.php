@@ -230,7 +230,7 @@ body{overflow:hidden}
           <div style="display:flex;gap:8px">
             <button class="pl-edit" style="flex:1;justify-content:center;display:flex" wire:click="duplicateNode({{ $selectedId }})">Duplicate</button>
             <button class="pl-edit" style="flex:1;justify-content:center;display:flex;color:var(--danger)"
-                    wire:click="deleteNode({{ $selectedId }})" wire:confirm="Delete this element?">Delete</button>
+                    @click="bConfirm('Delete this element?', { danger: true }).then(ok => ok && $wire.deleteNode({{ $selectedId }}))">Delete</button>
           </div>
         @endif
       </div>
@@ -318,7 +318,7 @@ body{overflow:hidden}
               <button data-tree wire:click="moveNode({{ $root['id'] }}, 'up')" title="Move up"><svg class="ic" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button>
               <button data-tree wire:click="moveNode({{ $root['id'] }}, 'down')" title="Move down"><svg class="ic" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
               <button data-tree wire:click="duplicateNode({{ $root['id'] }})" title="Duplicate"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
-              <button data-tree wire:click="deleteNode({{ $root['id'] }})" wire:confirm="Delete this section and everything in it?" title="Delete"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg></button>
+              <button data-tree @click="bConfirm('Delete this section and everything in it?', { danger: true }).then(ok => ok && $wire.deleteNode({{ $root['id'] }}))" title="Delete"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg></button>
             </div>
             {!! $root['html'] !!}
           </section>
@@ -656,8 +656,9 @@ body{overflow:hidden}
             if (toolsFor) wire()?.call('duplicateNode', toolsFor);
             hideTools();
           } else if (e.target.closest('#elt-del')) {
-            if (toolsFor && confirm('Delete this element?')) wire()?.call('deleteNode', toolsFor);
+            const id = toolsFor;
             hideTools();
+            if (id) bConfirm('Delete this element?', { danger: true }).then(ok => ok && wire()?.call('deleteNode', id));
           }
         });
 

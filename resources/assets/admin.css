@@ -790,3 +790,24 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 #bctx button:disabled{color:var(--chrome-muted);opacity:.55;cursor:default}
 #bctx button.danger{color:var(--danger)}
 #bctx hr{border:0;border-top:1px solid var(--chrome-line);margin:5px 6px}
+
+/* themed confirm modal */
+.bcf-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(8,9,12,.55);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.bcf-modal{
+  width:min(360px,100%);background:var(--panel-bg);border:1px solid var(--panel-line);
+  border-radius:14px;box-shadow:var(--shadow-pop);padding:20px;
+}
+.bcf-msg{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.5}
+.bcf-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.bcf-btn{
+  padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:700;
+  border:1px solid var(--panel-line);color:var(--ink-2);transition:.12s;background:var(--panel-card);
+}
+.bcf-btn:hover{border-color:var(--muted)}
+.bcf-btn.ok{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bcf-btn.ok:hover{background:#ffc233}
+.bcf-btn.ok.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.bcf-btn.ok.danger:hover{background:#ef6065}

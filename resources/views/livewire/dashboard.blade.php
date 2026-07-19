@@ -66,8 +66,7 @@
             @endif
             <a class="pl-edit" href="{{ route('buildr.edit', $page) }}">Edit</a>
             <button class="pl-edit" style="color:var(--danger)"
-                    wire:click="deletePage({{ $page->id }})"
-                    wire:confirm="Delete “{{ $page->title }}” and all its content?">✕</button>
+                    @click="bConfirm(@js('Delete “'.$page->title.'” and all its content?'), { danger: true }).then(ok => ok && $wire.deletePage({{ $page->id }}))">✕</button>
           </span>
         </div>
       @empty
