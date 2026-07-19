@@ -34,10 +34,10 @@ class IconList extends Element
     public static function styleFields(): array
     {
         return [
-            Field::unit('icon_size', ['px', 'em'])->default(['value' => 18, 'unit' => 'px']),
-            Field::color('icon_color'),
-            Field::color('text_color'),
-            Field::unit('item_gap', ['px', 'em'])->default(['value' => 10, 'unit' => 'px']),
+            Field::unit('icon_size', ['px', 'em'])->default(['value' => 18, 'unit' => 'px'])->section('Icons'),
+            Field::color('icon_color')->section('Icons'),
+            Field::color('text_color')->section('Text'),
+            Field::unit('item_gap', ['px', 'em'])->default(['value' => 10, 'unit' => 'px'])->section('Spacing'),
         ];
     }
 

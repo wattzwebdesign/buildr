@@ -29,12 +29,12 @@ class IconBox extends Element
     public static function styleFields(): array
     {
         return [
-            Field::unit('icon_size', ['px', 'em'])->default(['value' => 32, 'unit' => 'px']),
-            Field::color('icon_color'),
-            Field::color('heading_color'),
-            Field::color('text_color'),
-            Field::color('background'),
-            Field::sides('border_radius', ['px', '%']),
+            Field::unit('icon_size', ['px', 'em'])->default(['value' => 32, 'unit' => 'px'])->section('Icon'),
+            Field::color('icon_color')->section('Icon'),
+            Field::color('heading_color')->section('Heading'),
+            Field::color('text_color')->section('Description'),
+            Field::color('background')->section('Box'),
+            Field::sides('border_radius', ['px', '%'])->section('Box'),
         ];
     }
 

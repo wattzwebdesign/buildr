@@ -32,10 +32,10 @@ class SocialIcons extends Element
     public static function styleFields(): array
     {
         return [
-            Field::unit('size', ['px', 'em'])->default(['value' => 20, 'unit' => 'px']),
-            Field::unit('gap', ['px', 'em'])->default(['value' => 10, 'unit' => 'px']),
-            Field::color('color'),
-            Field::color('background'),
+            Field::unit('size', ['px', 'em'])->default(['value' => 20, 'unit' => 'px'])->section('Icons'),
+            Field::unit('gap', ['px', 'em'])->default(['value' => 10, 'unit' => 'px'])->section('Icons'),
+            Field::color('color')->section('Colors'),
+            Field::color('background')->section('Colors'),
             Field::select('shape', ['' => 'None', 'circle' => 'Circle', 'rounded' => 'Rounded'])->default('circle')
                 ->buttons(['' => 'ban', 'circle' => 'shape-circle', 'rounded' => 'shape-rounded']),
         ];

@@ -36,9 +36,9 @@ class Form extends Element
     public static function styleFields(): array
     {
         return [
-            Field::color('label_color'),
-            Field::color('field_background'),
-            Field::sides('field_radius', ['px']),
+            Field::color('label_color')->section('Labels'),
+            Field::color('field_background')->section('Fields'),
+            Field::sides('field_radius', ['px'])->section('Fields'),
         ];
     }
 

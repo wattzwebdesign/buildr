@@ -151,7 +151,7 @@ class NewElementsTest extends TestCase
     public function test_richtext_plain_text_becomes_paragraphs_html_passes_through(): void
     {
         $this->assertSame(
-            '<p>First para</p><p>Line one<br>\nLine two</p>',
+            "<p>First para</p><p>Line one<br>\nLine two</p>",
             \Buildr\Support\Richtext::render("First para\n\nLine one\nLine two")
         );
         $this->assertSame(

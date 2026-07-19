@@ -30,8 +30,8 @@ class Tabs extends Element
     public static function styleFields(): array
     {
         return [
-            Field::color('active_color'),
-            Field::color('label_color'),
+            Field::color('active_color')->section('Labels'),
+            Field::color('label_color')->section('Labels'),
         ];
     }
 
