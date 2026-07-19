@@ -88,9 +88,6 @@ body{overflow:hidden}
     @if ($view === 'library')
       <!-- ============ SIDEBAR LIBRARY ============ -->
       <div class="controls" x-data="{ q: '' }">
-        <button class="lib-back" wire:click="closeLibrary">
-          <svg class="ic" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M5 12h14"/></svg> Back to editing
-        </button>
         <div class="lib-search">
           <svg viewBox="0 0 24 24" class="ic"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
           <input placeholder="Search elements…" x-model="q">
