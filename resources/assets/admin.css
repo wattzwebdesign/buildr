@@ -736,3 +736,12 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 
 /* library search: input text must follow theme ink */
 .lib-search input{color:var(--ink)}
+
+/* icon picker grid */
+.ipk-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-height:230px;overflow-y:auto;margin-top:8px}
+.ipk-item{
+  aspect-ratio:1;display:grid;place-items:center;border-radius:7px;color:var(--ink-2);
+  border:1px solid transparent;transition:.1s;
+}
+.ipk-item:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.07)}
+.ipk-item svg,.ipk-cur svg{width:17px;height:17px}

@@ -74,6 +74,13 @@ class BuildrServiceProvider extends ServiceProvider
             ]);
         })->name('buildr.placeholder');
 
+        \Illuminate\Support\Facades\Route::get('/buildr-assets/icons.json', function () {
+            return response(file_get_contents(__DIR__.'/../resources/icons/lucide.json'), 200, [
+                'Content-Type' => 'application/json',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        })->name('buildr.icons');
+
         \Illuminate\Support\Facades\Route::middleware(config('buildr.middleware', ['web']))
             ->post('/buildr-form/{node}', \Buildr\Http\FormSubmissionController::class)
             ->name('buildr.form.submit');

@@ -18,7 +18,7 @@ class IconList extends Element
     {
         return [
             Field::repeater('items', [
-                Field::select('icon', Icons::options())->default('check'),
+                Field::icon('icon')->default('check'),
                 Field::text('text')->default('List item'),
                 Field::text('url')->label('Link'),
             ])->default([

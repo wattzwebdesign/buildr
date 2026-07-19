@@ -182,6 +182,11 @@
       </div>
       @break
 
+    @case('icon')
+      @php $ival = data_get($settings, str_replace('settings.', '', $base)); @endphp
+      @include('buildr::livewire.partials.iconpicker', ['path' => $base, 'current' => is_scalar($ival) ? $ival : ''])
+      @break
+
     @case('media')
       <input class="in mono" placeholder="https://…/image.jpg" wire:model.live.debounce.400ms="{{ $base }}">
       <label class="pl-edit" style="display:block;text-align:center;cursor:pointer;margin-top:8px">
@@ -253,7 +258,9 @@
                 @endphp
                 <div class="fld" style="margin-top:10px;margin-bottom:0">
                   @if ($sub['type'] !== 'toggle')<div class="fld-label">{{ $sub['label'] }}</div>@endif
-                  @if ($sub['type'] === 'select')
+                  @if ($sub['type'] === 'icon')
+                    @include('buildr::livewire.partials.iconpicker', ['path' => $sbase, 'current' => is_scalar($item[$sub['key']] ?? null) ? ($item[$sub['key']] ?? '') : ''])
+                  @elseif ($sub['type'] === 'select')
                     <select class="in" wire:model.change="{{ $sbase }}">
                       <option value="">—</option>
                       @foreach ($sub['options'] ?? [] as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach

@@ -183,6 +183,19 @@ class NewElementsTest extends TestCase
         $this->assertMatchesRegularExpression('/:where\(\.ib-body\)\{[^}]*font-size:14px/', $css);
     }
 
+    public function test_lucide_icons_render_and_custom_svg_passes_through(): void
+    {
+        $this->assertGreaterThan(1900, count(\Buildr\Support\Icons::lucide()));
+        $this->assertStringContainsString('<svg', \Buildr\Support\Icons::svg('anchor'));
+        $this->assertStringContainsString('stroke="currentColor"', \Buildr\Support\Icons::svg('rocket'));
+        $this->assertSame('<svg viewBox="0 0 10 10"><rect/></svg>',
+            \Buildr\Support\Icons::svg('<svg viewBox="0 0 10 10"><rect/></svg>'));
+        $this->assertSame('', \Buildr\Support\Icons::svg('not-a-real-icon-xyz'));
+
+        $this->get('/buildr-assets/icons.json')->assertOk()
+            ->assertHeader('Content-Type', 'application/json');
+    }
+
     public function test_form_required_field_rejects_empty(): void
     {
         $page = $this->pageWith('form');

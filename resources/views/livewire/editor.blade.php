@@ -398,6 +398,37 @@ body{overflow:hidden}
         clear() { this.hex = ''; if (ckey) window.__liveColor?.(ckey, '');
           window.Livewire.all()[0]?.$wire.set(path, ''); this.open = false; },
       });
+      window.iconPicker = (path, initial) => ({
+        open: false, pasteMode: false, pasted: '', q: '', value: initial, icons: {}, names: [],
+        get filtered() {
+          const q = this.q.toLowerCase();
+          return q ? this.names.filter(n => n.includes(q)) : this.names;
+        },
+        label() {
+          if (!this.value) return 'Choose icon…';
+          return this.value.trim().startsWith('<svg') ? 'Custom SVG' : this.value;
+        },
+        wrap(inner) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner || ''}</svg>`;
+        },
+        async toggle() {
+          this.open = !this.open;
+          if (!this.open) return;
+          this.$nextTick(() => this.$refs.search?.focus());
+          if (this.names.length) return;
+          window.__buildrIconsP ||= fetch(@js(route('buildr.icons').'?v=').concat(@js(substr(\Buildr\Support\UpdateCheck::installedRef() ?? '0', 0, 12)))).then(r => r.json());
+          this.icons = await window.__buildrIconsP;
+          this.names = Object.keys(this.icons);
+        },
+        pick(n) { this.value = n; this.open = false; this.q = '';
+          window.Livewire.all()[0]?.$wire.set(path, n); },
+        applyPaste() {
+          const v = this.pasted.trim();
+          if (!v.startsWith('<svg')) return;
+          this.value = v; this.pasteMode = false; this.open = false;
+          window.Livewire.all()[0]?.$wire.set(path, v);
+        },
+      });
       window.fontPicker = (path, initial) => ({
         open: false, q: '', value: initial,
         get filtered() {

@@ -46,20 +46,37 @@ final class Icons
         'google' => '<circle cx="12" cy="12" r="10"/><path d="M12 8v4h6"/>',
     ];
 
+    private static ?array $lucide = null;
+
+    /** Full bundled Lucide set (name => inner SVG markup). */
+    public static function lucide(): array
+    {
+        return self::$lucide ??= json_decode(
+            file_get_contents(__DIR__.'/../../resources/icons/lucide.json'), true
+        ) ?: [];
+    }
+
     public static function svg(?string $name, int $size = 24): string
     {
-        $path = self::PATHS[$name] ?? null;
-        if (! $path) {
+        $name = (string) $name;
+
+        // custom pasted SVG stored verbatim as the value
+        if (str_starts_with(ltrim($name), '<svg')) {
+            return $name;
+        }
+
+        $inner = self::PATHS[$name] ?? self::lucide()[$name] ?? null;
+        if (! $inner) {
             return '';
         }
 
-        return '<svg xmlns="http://www.w3.org/2000/svg" width="'.$size.'" height="'.$size.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'.$path.'</svg>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="'.$size.'" height="'.$size.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'.$inner.'</svg>';
     }
 
     /** value => label options for icon select fields. */
     public static function options(): array
     {
-        $names = array_keys(self::PATHS);
+        $names = array_values(array_unique(array_merge(array_keys(self::PATHS), array_keys(self::lucide()))));
 
         return array_combine($names, array_map(fn ($n) => ucwords(str_replace('-', ' ', $n)), $names));
     }

@@ -17,7 +17,7 @@ class IconBox extends Element
     public static function contentFields(): array
     {
         return [
-            Field::select('icon', Icons::options())->default('star'),
+            Field::icon('icon')->default('star'),
             Field::text('heading')->default('Icon Box Title'),
             Field::richtext('body')->default('Describe the service or feature here in a sentence or two.'),
             Field::link('link'),
