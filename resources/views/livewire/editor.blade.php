@@ -22,6 +22,7 @@ body{overflow:hidden}
   display:grid;place-items:center;font-family:Archivo,sans-serif;font-size:12px;
   color:#8b8f98;cursor:pointer;transition:.15s;
 }
+.bcol-ph:not(.mini){flex:1;align-self:stretch}
 .bcol-ph.mini{min-height:34px;opacity:0;font-size:15px}
 .bcol:hover .bcol-ph.mini{opacity:.65}
 .bcol-ph:hover,.bcol-ph.drop-hot{border-color:var(--accent);color:var(--accent);background:rgba(255,178,0,.06);opacity:1 !important}
