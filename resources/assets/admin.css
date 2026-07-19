@@ -691,3 +691,6 @@ select.in::-ms-expand{display:none}
 .togglerow .tgi{display:none}
 .togglerow .tgi:checked + .tg{background:var(--accent)}
 .togglerow .tgi:checked + .tg::after{left:16px}
+
+/* the switch pill must not inherit the label span's flex-grow */
+.togglerow .tg{flex:0 0 34px;width:34px}
