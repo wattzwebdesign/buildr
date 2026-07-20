@@ -1087,6 +1087,14 @@ class Editor extends Component
             ],
             'recentMedia' => \Buildr\Models\Media::latest()->take(12)->get()
                 ->map(fn ($m) => ['url' => $m->url(), 'name' => $m->name])->all(),
+            'allMedia' => \Buildr\Models\Media::latest()->get()
+                ->map(fn ($m) => [
+                    'id' => $m->id,
+                    'url' => $m->url(),
+                    'name' => $m->name,
+                    'size' => $m->size >= 1048576 ? round($m->size / 1048576, 1).' MB' : max(1, (int) round($m->size / 1024)).' KB',
+                    'date' => $m->created_at->format('M j, Y'),
+                ])->all(),
         ])->title("Buildr — {$this->page->title}");
     }
 }

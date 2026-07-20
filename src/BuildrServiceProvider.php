@@ -94,6 +94,7 @@ class BuildrServiceProvider extends ServiceProvider
                 \Illuminate\Support\Facades\Route::get('/', fn () => redirect()->route('buildr.pages'));
                 \Illuminate\Support\Facades\Route::get('/pages', \Buildr\Http\Livewire\Dashboard::class)->name('buildr.pages');
                 \Illuminate\Support\Facades\Route::get('/pages/{page}/edit', \Buildr\Http\Livewire\Editor::class)->name('buildr.edit');
+                \Illuminate\Support\Facades\Route::get('/media', \Buildr\Http\Livewire\MediaLibrary::class)->name('buildr.media');
                 \Illuminate\Support\Facades\Route::get('/assets/admin.css', function () {
                     return response(file_get_contents(__DIR__.'/../resources/assets/admin.css'), 200, [
                         'Content-Type' => 'text/css',

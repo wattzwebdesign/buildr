@@ -210,12 +210,15 @@
 
     @case('media')
       <input class="in mono" placeholder="https://…/image.jpg" wire:model.live.debounce.400ms="{{ $base }}">
-      <label class="pl-edit" style="display:block;text-align:center;cursor:pointer;margin-top:8px">
-        <span wire:loading.remove wire:target="upload">Upload image…</span>
-        <span wire:loading wire:target="upload">Uploading…</span>
-        <input type="file" accept="image/*" style="display:none" wire:model="upload"
-               x-on:click="$wire.set('mediaTarget', '{{ $base }}')">
-      </label>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <label class="pl-edit" style="flex:1;text-align:center;cursor:pointer">
+          <span wire:loading.remove wire:target="upload">Upload…</span>
+          <span wire:loading wire:target="upload">Uploading…</span>
+          <input type="file" accept="image/*" style="display:none" wire:model="upload"
+                 x-on:click="$wire.set('mediaTarget', '{{ $base }}')">
+        </label>
+        <button type="button" class="pl-edit" style="flex:1" @click="$store.mlib.show('{{ $base }}')">Library…</button>
+      </div>
       @error('upload')<div class="fld-hint" style="color:var(--danger)">{{ $message }}</div>@enderror
       @if (!empty($recentMedia))
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">

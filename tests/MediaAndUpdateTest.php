@@ -50,6 +50,54 @@ class MediaAndUpdateTest extends TestCase
         $this->assertNull(Media::first());
     }
 
+    public function test_media_library_page_lists_searches_and_deletes(): void
+    {
+        Storage::fake('public');
+
+        // seed two uploads via the editor flow
+        $page = Page::create(['title' => 'T', 'slug' => 't']);
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'image');
+        $image = $page->nodes()->where('type', 'image')->first();
+        $component->call('selectNode', $image->id)
+            ->set('mediaTarget', 'settings.content.src')
+            ->set('upload', UploadedFile::fake()->image('roof-hero.jpg'))
+            ->set('mediaTarget', '')
+            ->set('upload', UploadedFile::fake()->image('unused-photo.jpg'));
+
+        $this->get('/buildr/media')->assertOk()->assertSee('roof-hero.jpg')->assertSee('unused-photo.jpg');
+
+        // usage counts: first file is on the page, second is not
+        $library = Livewire::test(\Buildr\Http\Livewire\MediaLibrary::class);
+        $items = collect($library->viewData('items'))->keyBy('name');
+        $this->assertSame(1, $items['roof-hero.jpg']['used']);
+        $this->assertSame(0, $items['unused-photo.jpg']['used']);
+
+        // search narrows the grid
+        $library->set('search', 'unused')
+            ->assertSee('unused-photo.jpg')->assertDontSee('roof-hero.jpg');
+
+        // delete removes the record and the file
+        $unused = Media::where('name', 'unused-photo.jpg')->first();
+        $library->call('deleteMedia', $unused->id);
+        $this->assertNull(Media::find($unused->id));
+        Storage::disk('public')->assertMissing($unused->path);
+    }
+
+    public function test_editor_offers_the_media_library_picker(): void
+    {
+        Storage::fake('public');
+        Media::create(['path' => 'buildr/pic.jpg', 'name' => 'pic.jpg', 'size' => 2048]);
+
+        $page = Page::create(['title' => 'T', 'slug' => 't']);
+        Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1)
+            ->call('addElement', 'image')
+            ->assertSee('Library…')
+            ->assertSee('pic.jpg');
+    }
+
     public function test_update_check_compares_refs(): void
     {
         Http::fake(['api.github.com/*' => Http::response('abcdef1234567890', 200)]);
