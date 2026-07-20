@@ -107,7 +107,7 @@ class EditorTest extends TestCase
             ->call('selectNode', $container->id)
             ->set('settings.style.border_style', 'solid')
             ->set('settings.style.border_color', '#000000')
-            ->set('settings.style.border_width.top.value', 5);
+            ->set('settings.style.border_width.desktop.top.value', 5);
 
         $css = $this->publishedRender($page)['css'];
 
