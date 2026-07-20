@@ -255,12 +255,21 @@ body{overflow:hidden}
         </span>
         <span wire:loading style="color:var(--accent)">SAVING…</span>
       </span>
+      @if ($view === 'site')
+        <button class="publish {{ $siteDirty ? 'dirty' : '' }}" wire:click="saveSite" style="margin-left:auto"
+                @if (! $siteDirty) disabled @endif>
+          <span wire:loading.remove wire:target="saveSite">Save Settings</span>
+          <span wire:loading wire:target="saveSite">Saving…</span>
+          <span class="dot"></span>
+        </button>
+      @else
       <button class="publish {{ $isDirty ? 'dirty' : '' }}" wire:click="publish" style="margin-left:auto"
               @if (! $isDirty && $page->isPublished()) disabled @endif>
         <span wire:loading.remove wire:target="publish">{{ $page->isPublished() ? 'Update' : 'Publish' }}</span>
         <span wire:loading wire:target="publish">Saving…</span>
         <span class="dot"></span>
       </button>
+      @endif
     </div>
   </aside>
 

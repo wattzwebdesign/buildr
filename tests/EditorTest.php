@@ -131,6 +131,21 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('grid-template-columns:33fr 67fr', $css);
     }
 
+    public function test_site_settings_save_only_on_explicit_save(): void
+    {
+        $page = $this->pageWithHero();
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('openSite')
+            ->set('site.name', 'Changed Name')
+            ->assertSet('siteDirty', true);
+
+        $this->assertNull(\Buildr\Models\SiteSetting::get('name'));
+
+        $component->call('saveSite')->assertSet('siteDirty', false);
+        $this->assertSame('Changed Name', \Buildr\Models\SiteSetting::get('name'));
+    }
+
     public function test_publish_from_editor(): void
     {
         $page = $this->pageWithHero();

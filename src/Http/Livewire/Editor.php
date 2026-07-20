@@ -311,6 +311,7 @@ class Editor extends Component
     public function openSite(): void
     {
         $this->view = 'site';
+        $this->siteDirty = false;
         $this->site = [
             'name' => \Buildr\Models\SiteSetting::get('name', ''),
             'phone' => \Buildr\Models\SiteSetting::get('phone', ''),
@@ -328,25 +329,34 @@ class Editor extends Component
         ];
     }
 
+    public bool $siteDirty = false;
+
+    /** Edits only mark the panel dirty — nothing persists until Save. */
     public function updatedSite(): void
+    {
+        $this->siteDirty = true;
+    }
+
+    public function saveSite(): void
     {
         foreach ($this->site as $key => $value) {
             \Buildr\Models\SiteSetting::set($key, $value);
         }
         $this->page->touch(); // bust page cache so globals recompile
+        $this->siteDirty = false;
     }
 
     public function addGlobalColor(): void
     {
         $this->site['colors'][] = ['name' => 'Color '.(count($this->site['colors']) + 1), 'value' => '#888888'];
-        $this->updatedSite();
+        $this->siteDirty = true;
     }
 
     public function removeGlobalColor(int $index): void
     {
         unset($this->site['colors'][$index]);
         $this->site['colors'] = array_values($this->site['colors']);
-        $this->updatedSite();
+        $this->siteDirty = true;
     }
 
     private const COL_WIDTHS = [1 => [100], 2 => [50, 50], 3 => [33, 33, 33], 4 => [25, 25, 25, 25]];
