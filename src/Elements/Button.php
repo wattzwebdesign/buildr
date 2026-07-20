@@ -72,12 +72,12 @@ class Button extends Element
             Field::color('color')->label('Text color')->states(),
             Field::color('background')->states(),
             Field::select('font_family', \Buildr\Support\Fonts::options('Default'))->section('Typography')->css('font-family'),
-            Field::unit('font_size', ['px', 'em', 'rem'])->section('Typography'),
+            Field::unit('font_size', ['px', 'em', 'rem'])->responsive()->section('Typography'),
             Field::unit('letter_spacing', ['px', 'em'])->section('Typography')->css('letter-spacing'),
             Field::select('text_transform', ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize'])->section('Typography')->css('text-transform'),
             Field::select('font_weight', array_combine(range(100, 900, 100), range(100, 900, 100)))->section('Typography'),
-            Field::sides('border_radius', ['px', '%'])->section('Border'),
-            Field::sides('padding', ['px', 'em'])->section('Spacing'),
+            Field::sides('border_radius', ['px', '%'])->responsive()->section('Border'),
+            Field::sides('padding', ['px', 'em'])->responsive()->section('Spacing'),
             Field::select('shadow', ['' => 'None', 'sm' => 'Small', 'md' => 'Medium', 'lg' => 'Large'])->section('Effects'),
         ];
     }

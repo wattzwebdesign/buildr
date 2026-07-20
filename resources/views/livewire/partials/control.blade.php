@@ -22,7 +22,28 @@
     <div class="fld-label">
       {{ $field['label'] }}
       @if ($responsive)
-        <span class="ctx-chip" style="margin-left:auto;font-size:8.5px" title="Editing {{ $device }} value">{{ strtoupper(substr($device, 0, 1)) }}</span>
+        @php
+          $devIcons = [
+              'desktop' => '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+              'tablet' => '<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/>',
+              'mobile' => '<rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/>',
+          ];
+        @endphp
+        <span x-data="{ o: false }" style="margin-left:auto;position:relative">
+          <button type="button" @click.stop="o = !o"
+                  title="Responsive control — editing {{ $device }} value"
+                  style="display:grid;place-items:center;color:{{ $device === 'desktop' ? 'var(--muted)' : 'var(--accent)' }}">
+            <svg class="ic" viewBox="0 0 24 24" style="width:13px;height:13px">{!! $devIcons[$device] !!}</svg>
+          </button>
+          <div x-show="o" @click.outside="o = false" class="fp-pop" style="left:auto;right:-6px;top:calc(100% + 4px);width:auto;padding:5px">
+            @foreach ($devIcons as $dev => $icon)
+              <button type="button" class="fp-item" style="padding:7px 9px;{{ $device === $dev ? 'color:var(--accent)' : '' }}"
+                      title="{{ ucfirst($dev) }}" @click="o = false; $wire.setDevice('{{ $dev }}')">
+                <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px">{!! $icon !!}</svg>
+              </button>
+            @endforeach
+          </div>
+        </span>
       @endif
       @if ($tab === 'content' && in_array($field['type'], ['text', 'textarea', 'richtext', 'link']) && !empty($dynTags))
         <span x-data="{ o: false }" style="{{ $responsive ? '' : 'margin-left:auto;' }}position:relative">

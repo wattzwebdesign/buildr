@@ -131,6 +131,27 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('grid-template-columns:33fr 67fr', $css);
     }
 
+    public function test_responsive_button_padding_compiles_per_device(): void
+    {
+        $page = $this->pageWithHero();
+        $container = $page->nodes()->where('type', 'container')->first();
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $container->id)
+            ->call('addElement', 'button');
+        $button = $page->nodes()->where('type', 'button')->first();
+
+        $component->call('selectNode', $button->id)
+            ->call('setTab', 'style')
+            ->set('settings.style.padding.desktop.top.value', 12)
+            ->call('setDevice', 'mobile')
+            ->set('settings.style.padding.mobile.top.value', 8);
+
+        $css = $this->publishedRender($page)['css'];
+        $this->assertStringContainsString('padding-top:12px', $css);
+        $this->assertMatchesRegularExpression('/@media\(max-width:640px\).*padding-top:8px/s', $css);
+    }
+
     public function test_site_settings_save_only_on_explicit_save(): void
     {
         $page = $this->pageWithHero();

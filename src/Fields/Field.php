@@ -121,8 +121,8 @@ class Field implements Arrayable
             static::unit("{$prefix}_font_size", ['px', 'em', 'rem'])->label('Font Size')->responsive()->css('font-size'),
             static::select("{$prefix}_font_weight", array_combine(range(100, 900, 100), range(100, 900, 100)))
                 ->label('Font Weight')->css('font-weight'),
-            static::unit("{$prefix}_line_height", ['', 'px', 'em'])->label('Line Height')->css('line-height'),
-            static::unit("{$prefix}_letter_spacing", ['px', 'em'])->label('Letter Spacing')->css('letter-spacing'),
+            static::unit("{$prefix}_line_height", ['', 'px', 'em'])->label('Line Height')->responsive()->css('line-height'),
+            static::unit("{$prefix}_letter_spacing", ['px', 'em'])->label('Letter Spacing')->responsive()->css('letter-spacing'),
             static::select("{$prefix}_text_transform", ['none' => 'None', 'uppercase' => 'Uppercase', 'lowercase' => 'Lowercase', 'capitalize' => 'Capitalize'])
                 ->label('Text Transform')->css('text-transform'),
         ]);
