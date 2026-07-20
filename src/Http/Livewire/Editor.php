@@ -992,16 +992,30 @@ class Editor extends Component
         $registry = app(ElementRegistry::class);
         $library = collect($registry->schemas())->groupBy(fn ($s) => $s['group']);
 
-        $walk = function ($nodes, int $depth) use (&$walk, $registry): array {
+        $walk = function ($nodes, int $depth, array $ancestors = []) use (&$walk, $registry): array {
             $rows = [];
             foreach ($nodes as $n) {
                 $rows[] = [
                     'id' => $n->id,
+                    'type' => $n->type,
                     'label' => $n->data['content']['_label'] ?? $registry->get($n->type)::label(),
                     'visible' => $n->visible,
                     'depth' => $depth,
+                    'ancestors' => $ancestors,
+                    'hasKids' => $n->children->isNotEmpty(),
                 ];
-                $rows = array_merge($rows, $walk($n->children, $depth + 1));
+
+                // list children in RENDER order: bucketed by column, then sort
+                $children = $n->children->values();
+                if ($n->type === 'container') {
+                    $cols = max(1, count($n->data['content']['widths'] ?? [100]));
+                    $children = $children
+                        ->map(fn ($c, $i) => ['node' => $c, 'col' => min((int) ($c->data['content']['_col'] ?? ($i % $cols)), $cols - 1)])
+                        ->sortBy(fn ($e) => [$e['col'], $e['node']->sort])
+                        ->pluck('node')->values();
+                }
+
+                $rows = array_merge($rows, $walk($children, $depth + 1, [...$ancestors, $n->id]));
             }
 
             return $rows;

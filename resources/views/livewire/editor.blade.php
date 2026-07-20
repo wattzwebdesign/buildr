@@ -431,13 +431,21 @@ body{overflow:hidden}
         inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
       window.navPanel = () => ({
-        x: null, y: null, dx: 0, dy: 0, moving: false,
+        x: null, y: null, dx: 0, dy: 0, moving: false, collapsed: [],
         init() {
           try {
             const saved = JSON.parse(localStorage.getItem('buildr-nav-pos') || 'null');
             if (saved) { this.x = saved.x; this.y = saved.y; }
+            this.collapsed = JSON.parse(localStorage.getItem('buildr-nav-collapsed') || '[]');
           } catch (e) {}
         },
+        toggleCollapse(id) {
+          const i = this.collapsed.indexOf(id);
+          i > -1 ? this.collapsed.splice(i, 1) : this.collapsed.push(id);
+          localStorage.setItem('buildr-nav-collapsed', JSON.stringify(this.collapsed));
+        },
+        isCollapsed(id) { return this.collapsed.includes(id); },
+        isHidden(ancestors) { return ancestors.some(a => this.collapsed.includes(a)); },
         pos() {
           return this.x !== null
             ? `left:${Math.max(0, this.x)}px;top:${Math.max(40, this.y)}px;right:auto`
@@ -608,16 +616,23 @@ body{overflow:hidden}
         document.addEventListener('dragover', e => {
           if (!drag) return;
 
-          // navigator rows: before/after line reordering
+          // navigator rows: before/after lines; container rows also have a
+          // drop-INSIDE middle zone (highlight instead of line)
           if (drag.kind === 'move') {
             const nr = e.target.closest('.nav-row[data-nav-id]');
             if (nr && parseInt(nr.dataset.navId) !== drag.id) {
               e.preventDefault();
               const rect = nr.getBoundingClientRect();
-              const before = e.clientY < rect.top + rect.height / 2;
-              if (lineEl !== nr) { clear(); lineEl = nr; }
-              nr.classList.toggle('drop-before', before);
-              nr.classList.toggle('drop-after', !before);
+              const y = (e.clientY - rect.top) / rect.height;
+              const isContainer = nr.dataset.navType === 'container';
+              if (isContainer && y > 0.3 && y < 0.7) {
+                if (hotEl !== nr) { clear(); hotEl = nr; nr.classList.add('drop-hot'); }
+              } else {
+                const before = y < 0.5;
+                if (lineEl !== nr) { clear(); lineEl = nr; }
+                nr.classList.toggle('drop-before', before);
+                nr.classList.toggle('drop-after', !before);
+              }
               return;
             }
           }
@@ -670,6 +685,13 @@ body{overflow:hidden}
             const after = parseInt(gap.dataset.gapAfter);
             if (drag.type === 'container') w?.call('dropContainerAt', drag.cols, after);
             else w?.call('dropElementAt', drag.type, after);
+            return finish();
+          }
+
+          const navHot = e.target.closest('.nav-row[data-nav-id]');
+          if (drag.kind === 'move' && navHot && hotEl === navHot) {
+            e.preventDefault();
+            w?.call('moveNodeToColumn', drag.id, parseInt(navHot.dataset.navId), 0);
             return finish();
           }
 
@@ -913,10 +935,18 @@ body{overflow:hidden}
         <div class="nav-list">
           @foreach ($tree as $row)
             <div class="nav-row {{ $selectedId === $row['id'] ? 'sel' : '' }}"
-                 draggable="true" data-nav-id="{{ $row['id'] }}"
+                 draggable="true" data-nav-id="{{ $row['id'] }}" data-nav-type="{{ $row['type'] ?? '' }}"
+                 x-show="!isHidden(@js($row['ancestors'] ?? []))"
                  style="padding-left:{{ 8 + $row['depth'] * 16 }}px;{{ $row['depth'] > 0 ? 'font-weight:500' : '' }}"
                  wire:key="nav-{{ $row['id'] }}" wire:click="selectNode({{ $row['id'] }})"
                  x-data="{ ren: false }">
+              @if ($row['hasKids'] ?? false)
+                <button type="button" class="eye" style="margin-left:0" title="Collapse / expand"
+                        @click.stop="toggleCollapse({{ $row['id'] }})">
+                  <svg class="ic" viewBox="0 0 24 24" style="width:11px;height:11px;transition:transform .15s"
+                       :style="isCollapsed({{ $row['id'] }}) && 'transform:rotate(-90deg)'"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+              @endif
               <span class="grip" style="color:var(--chrome-muted);cursor:grab;display:grid;place-items:center">
                 <svg class="ic" viewBox="0 0 24 24" style="width:11px;height:11px"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
               </span>
