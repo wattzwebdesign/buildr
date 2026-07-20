@@ -811,3 +811,6 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 .bcf-btn.ok:hover{background:#ffc233}
 .bcf-btn.ok.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .bcf-btn.ok.danger:hover{background:#ef6065}
+
+/* publish/save button never wraps */
+.publish{white-space:nowrap}
