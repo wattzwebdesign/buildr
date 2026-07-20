@@ -166,6 +166,52 @@ body{overflow:hidden}
         <div class="fld"><div class="fld-label">Title</div><input class="in" wire:model.blur="pageForm.title"></div>
         <div class="fld"><div class="fld-label">Slug</div><input class="in mono" wire:model.blur="pageForm.slug">
           <div class="fld-hint">Page URL: <span class="mono">/{{ $pageForm['slug'] ?? $page->slug }}</span></div></div>
+        <div class="ctl-group"><span>Background</span></div>
+        <div class="fld"><div class="fld-label">Color</div>
+          @include('buildr::livewire.partials.colorpicker', ['path' => 'pageForm.background.color', 'current' => $pageForm['background']['color'] ?? '', 'ckey' => null, 'swatches' => $globalSwatches ?? []])
+        </div>
+        <div class="fld"><div class="fld-label">Image</div>
+          <input class="in mono" placeholder="https://…/image.jpg" wire:model.blur="pageForm.background.image">
+          <label class="pl-edit" style="display:block;text-align:center;cursor:pointer;margin-top:8px">
+            <span wire:loading.remove wire:target="upload">Upload image…</span>
+            <span wire:loading wire:target="upload">Uploading…</span>
+            <input type="file" accept="image/*" style="display:none" wire:model="upload"
+                   x-on:click="$wire.set('mediaTarget', 'pageForm.background.image')">
+          </label>
+          @if (!empty($recentMedia))
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+              @foreach ($recentMedia as $m)
+                <button type="button" title="{{ $m['name'] }}"
+                        style="aspect-ratio:1;border-radius:6px;border:1px solid var(--panel-line);background:url('{{ $m['url'] }}') center/cover;cursor:pointer"
+                        wire:click="$set('pageForm.background.image', '{{ $m['url'] }}')"></button>
+              @endforeach
+            </div>
+          @endif
+        </div>
+        @if (!empty($pageForm['background']['image']))
+          <div class="fld"><div class="fld-label">Position</div>
+            <select class="in" wire:model.change="pageForm.background.position">
+              @foreach (['' => 'Default (center)', 'top left' => 'Top Left', 'top center' => 'Top Center', 'top right' => 'Top Right', 'center left' => 'Center Left', 'center center' => 'Center Center', 'center right' => 'Center Right', 'bottom left' => 'Bottom Left', 'bottom center' => 'Bottom Center', 'bottom right' => 'Bottom Right'] as $v => $l)
+                <option value="{{ $v }}">{{ $l }}</option>
+              @endforeach
+            </select></div>
+          <div class="fld"><div class="fld-label">Attachment</div>
+            <select class="in" wire:model.change="pageForm.background.attachment">
+              <option value="">Default</option><option value="scroll">Scroll</option><option value="fixed">Fixed</option>
+            </select></div>
+          <div class="fld"><div class="fld-label">Repeat</div>
+            <select class="in" wire:model.change="pageForm.background.repeat">
+              @foreach (['' => 'Default (no repeat)', 'no-repeat' => 'No Repeat', 'repeat' => 'Repeat', 'repeat-x' => 'Repeat X', 'repeat-y' => 'Repeat Y'] as $v => $l)
+                <option value="{{ $v }}">{{ $l }}</option>
+              @endforeach
+            </select></div>
+          <div class="fld"><div class="fld-label">Display Size</div>
+            <select class="in" wire:model.change="pageForm.background.size">
+              @foreach (['' => 'Default (cover)', 'cover' => 'Cover', 'contain' => 'Contain', 'auto' => 'Auto'] as $v => $l)
+                <option value="{{ $v }}">{{ $l }}</option>
+              @endforeach
+            </select></div>
+        @endif
         <div class="ctl-group"><span>SEO</span></div>
         <div class="fld"><div class="fld-label">SEO Title</div><input class="in" wire:model.blur="pageForm.seo_title" placeholder="{{ $page->title }}">
           <div class="fld-hint">Browser tab + search result title. Falls back to the page title.</div></div>
@@ -373,7 +419,7 @@ body{overflow:hidden}
              if (s) $wire.selectNode(parseInt(s.dataset.root));
            ">
         {!! \Buildr\Render\GlobalCss::fontLink() !!}
-        {!! '<style>'.\Buildr\Render\BaseCss::css().\Buildr\Render\GlobalCss::css().$rendered['css'].'</style>' !!}
+        {!! '<style>'.\Buildr\Render\BaseCss::css().\Buildr\Render\GlobalCss::css().\Buildr\Render\PageCss::for($page).$rendered['css'].'</style>' !!}
 
         @forelse ($rendered['roots'] as $i => $root)
           <div class="addgap" data-gap-after="{{ $i === 0 ? 0 : $rendered['roots'][$i - 1]['id'] }}">

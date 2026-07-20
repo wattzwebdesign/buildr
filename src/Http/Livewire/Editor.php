@@ -37,7 +37,11 @@ class Editor extends Component
         if ($this->mediaTarget !== '') {
             $url = \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
             data_set($this, $this->mediaTarget, $url);
-            $this->persistTab(explode('.', $this->mediaTarget)[1] ?? 'content');
+            if (str_starts_with($this->mediaTarget, 'pageForm')) {
+                $this->pageDirty = true;
+            } else {
+                $this->persistTab(explode('.', $this->mediaTarget)[1] ?? 'content');
+            }
         }
 
         $this->upload = null;
@@ -372,6 +376,10 @@ class Editor extends Component
             'slug' => $this->page->slug,
             'seo_title' => $this->page->seo_title,
             'seo_description' => $this->page->seo_description,
+            'background' => array_merge(
+                ['color' => '', 'image' => '', 'position' => '', 'attachment' => '', 'repeat' => '', 'size' => ''],
+                $this->page->settings['background'] ?? []
+            ),
         ];
     }
 
@@ -393,6 +401,9 @@ class Editor extends Component
             'slug' => $slug,
             'seo_title' => $this->pageForm['seo_title'] ?: null,
             'seo_description' => $this->pageForm['seo_description'] ?: null,
+            'settings' => array_merge($this->page->settings ?? [], [
+                'background' => $this->pageForm['background'] ?? [],
+            ]),
         ]);
 
         $this->pageForm['slug'] = $slug;

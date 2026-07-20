@@ -98,6 +98,40 @@ class RevisionsTest extends TestCase
         $this->assertStringContainsString('Version two', $public);
     }
 
+    public function test_backgrounds_compile_for_page_and_container(): void
+    {
+        [$page, $component] = $this->publishedPage();
+
+        // page-level background via Page Settings
+        $component->call('openPage')
+            ->set('pageForm.background.color', '#f7f9fa')
+            ->set('pageForm.background.image', '/storage/buildr/bg.jpg')
+            ->set('pageForm.background.position', 'top center')
+            ->set('pageForm.background.attachment', 'fixed')
+            ->call('savePage');
+
+        $css = \Buildr\Render\PageCss::for($page->fresh());
+        $this->assertStringContainsString('background-color:#f7f9fa', $css);
+        $this->assertStringContainsString("background-image:url('/storage/buildr/bg.jpg')", $css);
+        $this->assertStringContainsString('background-position:top center', $css);
+        $this->assertStringContainsString('background-attachment:fixed', $css);
+        $this->assertStringContainsString('background-size:cover', $css); // default
+
+        // container background image with position settings
+        $container = $page->nodes()->where('is_draft', true)->where('type', 'container')->first();
+        $component->call('selectNode', $container->id)
+            ->call('setTab', 'style')
+            ->set('settings.style.bg_image', '/storage/buildr/hero.jpg')
+            ->set('settings.style.bg_position', 'bottom right')
+            ->set('settings.style.bg_size', 'contain');
+
+        $compiled = $this->publishedRender($page)['css'];
+        $this->assertStringContainsString("background-image:url('/storage/buildr/hero.jpg')", $compiled);
+        $this->assertStringContainsString('background-position:bottom right', $compiled);
+        $this->assertStringContainsString('background-size:contain', $compiled);
+        $this->assertStringContainsString('background-repeat:no-repeat', $compiled); // default
+    }
+
     public function test_page_settings_save_updates_slug_and_seo(): void
     {
         [$page, $component] = $this->publishedPage();

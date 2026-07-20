@@ -13,6 +13,7 @@ class Page extends Model
 
     protected $casts = [
         'published_at' => 'datetime',
+        'settings' => 'array',
     ];
 
     public function nodes(): HasMany

@@ -67,7 +67,19 @@ class Container extends Element
     public static function styleFields(): array
     {
         return [
-            Field::color('background'),
+            Field::color('background')->section('Background'),
+            Field::media('bg_image')->label('Background Image')->section('Background'),
+            Field::select('bg_position', [
+                '' => 'Default (center)', 'top left' => 'Top Left', 'top center' => 'Top Center', 'top right' => 'Top Right',
+                'center left' => 'Center Left', 'center center' => 'Center Center', 'center right' => 'Center Right',
+                'bottom left' => 'Bottom Left', 'bottom center' => 'Bottom Center', 'bottom right' => 'Bottom Right',
+            ])->label('Position')->section('Background'),
+            Field::select('bg_attachment', ['' => 'Default', 'scroll' => 'Scroll', 'fixed' => 'Fixed'])
+                ->label('Attachment')->section('Background'),
+            Field::select('bg_repeat', ['' => 'Default (no repeat)', 'no-repeat' => 'No Repeat', 'repeat' => 'Repeat', 'repeat-x' => 'Repeat X', 'repeat-y' => 'Repeat Y'])
+                ->label('Repeat')->section('Background'),
+            Field::select('bg_size', ['' => 'Default (cover)', 'cover' => 'Cover', 'contain' => 'Contain', 'auto' => 'Auto'])
+                ->label('Display Size')->section('Background'),
             Field::select('border_style', ['none' => 'None', 'solid' => 'Solid', 'dashed' => 'Dashed', 'dotted' => 'Dotted'])->default('none')
                 ->buttons(['none' => 'ban', 'solid' => 'line-solid', 'dashed' => 'line-dashed', 'dotted' => 'line-dotted'])->section('Border'),
             Field::sides('border_width', ['px'])->section('Border'),
@@ -101,6 +113,18 @@ class Container extends Element
 
         if (($content['stack_mobile'] ?? true) && count($widths) > 1) {
             $rules['@mobile'][$selector] = ['grid-template-columns' => '1fr'];
+        }
+
+        // Background image + positioning
+        $style = $this->node->settings('style');
+        if (! empty($style['bg_image'])) {
+            $rules[$selector]['background-image'] = "url('".$style['bg_image']."')";
+            $rules[$selector]['background-position'] = $style['bg_position'] ?? '' ?: 'center';
+            $rules[$selector]['background-repeat'] = $style['bg_repeat'] ?? '' ?: 'no-repeat';
+            $rules[$selector]['background-size'] = $style['bg_size'] ?? '' ?: 'cover';
+            if (! empty($style['bg_attachment'])) {
+                $rules[$selector]['background-attachment'] = $style['bg_attachment'];
+            }
         }
 
         // Flex controls for the column stacks (.bcol wrappers)

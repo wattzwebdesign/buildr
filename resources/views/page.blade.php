@@ -6,7 +6,7 @@
 <title>{{ $page->seo_title ?? $page->title }}</title>
 @if($page->seo_description)<meta name="description" content="{{ $page->seo_description }}">@endif
 {!! \Buildr\Render\GlobalCss::fontLink() !!}
-<style>{!! \Buildr\Render\BaseCss::css() !!}{!! \Buildr\Render\GlobalCss::css() !!}{!! $css !!}</style>
+<style>{!! \Buildr\Render\BaseCss::css() !!}{!! \Buildr\Render\GlobalCss::css() !!}{!! \Buildr\Render\PageCss::for($page) !!}{!! $css !!}</style>
 </head>
 <body class="buildr-page">
 {!! $html !!}
