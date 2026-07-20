@@ -131,6 +131,23 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('grid-template-columns:33fr 67fr', $css);
     }
 
+    public function test_editor_canvas_previews_breakpoints_via_container_queries(): void
+    {
+        $page = $this->pageWithHero();
+        $container = $page->nodes()->where('type', 'container')->first();
+        $container->update(['data' => ['content' => ['widths' => [50, 50], 'tag' => 'section', 'stack_mobile' => true]]]);
+
+        // editor canvas: container queries (frame width drives the preview)
+        Livewire::test(Editor::class, ['page' => $page->fresh()])
+            ->assertSee('@container (max-width:640px)', false)
+            ->assertDontSee('@media(max-width:640px)', false);
+
+        // published page keeps real viewport media queries
+        $css = $this->publishedRender($page->fresh())['css'];
+        $this->assertStringContainsString('@media(max-width:640px)', $css);
+        $this->assertStringContainsString('grid-template-columns:1fr;', $css);
+    }
+
     public function test_responsive_button_padding_compiles_per_device(): void
     {
         $page = $this->pageWithHero();

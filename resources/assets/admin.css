@@ -308,7 +308,7 @@ textarea.in{resize:vertical;line-height:1.5}
 }
 /* tablet/mobile previews float as device frames on the backdrop */
 .canvas.dev-tablet .canvas-scroll,.canvas.dev-mobile .canvas-scroll{padding:26px}
-.canvas.dev-tablet .page-frame,.canvas.dev-mobile .page-frame{border-radius:10px;box-shadow:var(--frame-shadow);min-height:0}
+.canvas.dev-tablet .page-frame,.canvas.dev-mobile .page-frame{border-radius:10px;box-shadow:var(--frame-shadow)}
 .canvas.dev-tablet .page-frame{max-width:768px}
 .canvas.dev-mobile .page-frame{max-width:392px}
 

@@ -419,7 +419,7 @@ body{overflow:hidden}
              if (s) $wire.selectNode(parseInt(s.dataset.root));
            ">
         {!! \Buildr\Render\GlobalCss::fontLink() !!}
-        {!! '<style>'.\Buildr\Render\BaseCss::css().\Buildr\Render\GlobalCss::css().\Buildr\Render\PageCss::for($page).$rendered['css'].'</style>' !!}
+        {!! '<style>'.str_replace('@media(max-width:', '@container (max-width:', \Buildr\Render\BaseCss::css().\Buildr\Render\GlobalCss::css().\Buildr\Render\PageCss::for($page).$rendered['css']).'</style>' !!}
 
         @forelse ($rendered['roots'] as $i => $root)
           <div class="addgap" data-gap-after="{{ $i === 0 ? 0 : $rendered['roots'][$i - 1]['id'] }}">
