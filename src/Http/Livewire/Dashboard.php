@@ -41,7 +41,12 @@ class Dashboard extends Component
     public function togglePublish(int $id): void
     {
         $page = Page::findOrFail($id);
-        $page->update(['published_at' => $page->published_at ? null : now()]);
+
+        if ($page->published_at) {
+            $page->update(['published_at' => null]);
+        } else {
+            \Buildr\Support\Publisher::publish($page);
+        }
     }
 
     public function deletePage(int $id): void
@@ -51,7 +56,7 @@ class Dashboard extends Component
 
     public function render()
     {
-        $pages = Page::withCount('nodes')
+        $pages = Page::withCount(['nodes' => fn ($q) => $q->where('is_draft', true)])
             ->when($this->search !== '', fn ($q) => $q->where(fn ($q) => $q
                 ->where('title', 'like', "%{$this->search}%")
                 ->orWhere('slug', 'like', "%{$this->search}%")))

@@ -15,6 +15,7 @@ class PageNode extends Model
     protected $casts = [
         'data' => 'array',
         'visible' => 'boolean',
+        'is_draft' => 'boolean',
     ];
 
     public function page(): BelongsTo

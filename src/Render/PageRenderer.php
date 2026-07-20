@@ -26,7 +26,7 @@ class PageRenderer
      */
     public function render(Page $page): array
     {
-        $page->load(['nodes' => fn ($q) => $q->where('visible', true)]);
+        $page->load(['nodes' => fn ($q) => $q->where('visible', true)->where('is_draft', false)]);
 
         $compiler = new StyleCompiler(config('buildr.breakpoints', ['tablet' => 1024, 'mobile' => 640]));
 
@@ -60,7 +60,7 @@ class PageRenderer
     public function renderEditor(Page $page): array
     {
         $this->editorMode = true;
-        $page->load('nodes');
+        $page->load(['nodes' => fn ($q) => $q->where('is_draft', true)]);
 
         $compiler = new StyleCompiler(config('buildr.breakpoints', ['tablet' => 1024, 'mobile' => 640]));
 

@@ -27,7 +27,7 @@ class NewElementsTest extends TestCase
             'social_icons', 'accordion', 'tabs', 'gallery', 'form'];
 
         $page = $this->pageWith(...$types);
-        $result = app(PageRenderer::class)->render($page);
+        $result = $this->publishedRender($page);
 
         foreach (['b-video', 'b-map', 'b-stars', 'b-iconbox', 'b-iconlist',
             'b-social', 'b-accordion', 'b-tabs', 'b-gallery', 'b-form'] as $marker) {
@@ -70,7 +70,7 @@ class NewElementsTest extends TestCase
     public function test_accordion_renders_native_details_with_exclusive_group(): void
     {
         $page = $this->pageWith('accordion');
-        $html = app(PageRenderer::class)->render($page)['html'];
+        $html = $this->publishedRender($page)['html'];
 
         $this->assertSame(2, substr_count($html, '<details'));
         $this->assertStringContainsString('name="acc-', $html);
@@ -80,7 +80,7 @@ class NewElementsTest extends TestCase
     public function test_tabs_render_without_javascript(): void
     {
         $page = $this->pageWith('tabs');
-        $result = app(PageRenderer::class)->render($page);
+        $result = $this->publishedRender($page);
 
         $this->assertSame(2, substr_count($result['html'], 'tb-panel"'));
         $this->assertStringNotContainsString('<script', $result['html']);
@@ -96,7 +96,7 @@ class NewElementsTest extends TestCase
             ->call('selectNode', $video->id)
             ->set('settings.content.url', 'https://www.youtube.com/watch?v=abc123XYZ');
 
-        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $html = $this->publishedRender($page)['html'];
         $this->assertStringContainsString('youtube-nocookie.com/embed/abc123XYZ', $html);
     }
 
@@ -144,7 +144,7 @@ class NewElementsTest extends TestCase
             ->call('selectNode', $heading->id)
             ->set('settings.style.color', 'var(--g-primary)');
 
-        $compiled = app(PageRenderer::class)->render($page->fresh())['css'];
+        $compiled = $this->publishedRender($page)['css'];
         $this->assertStringContainsString('color:var(--g-primary)', $compiled);
     }
 
@@ -174,7 +174,7 @@ class NewElementsTest extends TestCase
             ->set('settings.style.text_font_size.desktop.value', 14)
             ->set('settings.style.heading_text_transform', 'uppercase');
 
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString(':where(h3){', $css);
         $this->assertStringContainsString('color:#14324f', $css);

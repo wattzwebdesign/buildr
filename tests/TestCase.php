@@ -24,4 +24,12 @@ abstract class TestCase extends Orchestra
 
         $this->artisan('migrate')->run();
     }
+
+    /** Publish the draft, then render the public output. */
+    protected function publishedRender(\Buildr\Models\Page $page): array
+    {
+        \Buildr\Support\Publisher::publish($page->fresh());
+
+        return $this->app->make(\Buildr\Render\PageRenderer::class)->render($page->fresh());
+    }
 }

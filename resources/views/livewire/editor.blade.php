@@ -136,6 +136,43 @@ body{overflow:hidden}
           Elements: click to add to the selected container, or <b>drag onto any column</b> in the canvas.
         </div>
       </div>
+    @elseif ($view === 'page')
+      <!-- ============ PAGE SETTINGS ============ -->
+      <div class="controls">
+        <button class="lib-back" wire:click="closeLibrary">
+          <svg class="ic" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M5 12h14"/></svg> Back to editing
+        </button>
+        <div class="ctl-group"><span>Page</span></div>
+        <div class="fld"><div class="fld-label">Title</div><input class="in" wire:model.blur="pageForm.title"></div>
+        <div class="fld"><div class="fld-label">Slug</div><input class="in mono" wire:model.blur="pageForm.slug">
+          <div class="fld-hint">Page URL: <span class="mono">/{{ $pageForm['slug'] ?? $page->slug }}</span></div></div>
+        <div class="ctl-group"><span>SEO</span></div>
+        <div class="fld"><div class="fld-label">SEO Title</div><input class="in" wire:model.blur="pageForm.seo_title" placeholder="{{ $page->title }}">
+          <div class="fld-hint">Browser tab + search result title. Falls back to the page title.</div></div>
+        <div class="fld"><div class="fld-label">SEO Description</div><textarea class="in" rows="3" wire:model.blur="pageForm.seo_description"></textarea>
+          <div class="fld-hint">Aim for ~155 characters.</div></div>
+      </div>
+    @elseif ($view === 'history')
+      <!-- ============ HISTORY / REVISIONS ============ -->
+      <div class="controls">
+        <button class="lib-back" wire:click="closeLibrary">
+          <svg class="ic" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M5 12h14"/></svg> Back to editing
+        </button>
+        <div class="ctl-group"><span>Revisions</span></div>
+        @forelse ($revisions as $revision)
+          <div class="fld" wire:key="rev-{{ $revision->id }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel-card);border:1px solid var(--panel-line);border-radius:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:12.5px">{{ $revision->label ?? 'Snapshot' }}</div>
+              <div class="fld-hint" style="margin-top:2px">{{ $revision->created_at->diffForHumans() }}</div>
+            </div>
+            <button type="button" class="pl-edit"
+                    @click="bConfirm('Restore this revision into your draft? Current draft changes will be replaced.', { okText: 'Restore' }).then(ok => ok && $wire.restoreRevision({{ $revision->id }}))">Restore</button>
+          </div>
+        @empty
+          <div class="fld-hint">No revisions yet — every Publish creates a restorable snapshot.</div>
+        @endforelse
+        <div class="fld-hint" style="margin-top:10px">Restoring loads the snapshot into your <b>draft</b> — review it in the canvas, then Update to make it live.</div>
+      </div>
     @elseif ($view === 'site')
       <!-- ============ SITE SETTINGS ============ -->
       <div class="controls">
@@ -243,6 +280,12 @@ body{overflow:hidden}
       <button class="pf-btn {{ $view === 'site' ? 'on' : '' }}" wire:click="openSite" title="Site Settings" style="display:grid;place-items:center">
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
       </button>
+      <button class="pf-btn {{ $view === 'page' ? 'on' : '' }}" wire:click="openPage" title="Page Settings & SEO" style="display:grid;place-items:center">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+      </button>
+      <button class="pf-btn {{ $view === 'history' ? 'on' : '' }}" wire:click="openHistory" title="History / Revisions" style="display:grid;place-items:center">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg>
+      </button>
       <button class="pf-btn {{ $showNav ? 'on' : '' }}" wire:click="toggleNav" title="Navigator" style="display:grid;place-items:center">
         <svg class="ic" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
@@ -255,7 +298,14 @@ body{overflow:hidden}
         </span>
         <span wire:loading style="color:var(--accent)">SAVING…</span>
       </span>
-      @if ($view === 'site')
+      @if ($view === 'page')
+        <button class="publish {{ $pageDirty ? 'dirty' : '' }}" wire:click="savePage" style="margin-left:auto"
+                @if (! $pageDirty) disabled @endif>
+          <span wire:loading.remove wire:target="savePage">Save Page</span>
+          <span wire:loading wire:target="savePage">Saving…</span>
+          <span class="dot"></span>
+        </button>
+      @elseif ($view === 'site')
         <button class="publish {{ $siteDirty ? 'dirty' : '' }}" wire:click="saveSite" style="margin-left:auto"
                 @if (! $siteDirty) disabled @endif>
           <span wire:loading.remove wire:target="saveSite">Save Settings</span>
@@ -263,7 +313,11 @@ body{overflow:hidden}
           <span class="dot"></span>
         </button>
       @else
-      <button class="publish {{ $isDirty ? 'dirty' : '' }}" wire:click="publish" style="margin-left:auto"
+      @if ($isDirty && $page->isPublished())
+        <button type="button" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--chrome-muted);padding:0 10px"
+                @click="bConfirm('Discard draft changes and revert to the published version?', { danger: true, okText: 'Discard' }).then(ok => ok && $wire.discardDraft())">Discard</button>
+      @endif
+      <button class="publish {{ $isDirty ? 'dirty' : '' }}" wire:click="publish" style="{{ $isDirty && $page->isPublished() ? '' : 'margin-left:auto' }}"
               @if (! $isDirty && $page->isPublished()) disabled @endif>
         <span wire:loading.remove wire:target="publish">{{ $page->isPublished() ? 'Update' : 'Publish' }}</span>
         <span wire:loading wire:target="publish">Saving…</span>

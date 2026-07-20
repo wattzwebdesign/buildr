@@ -99,7 +99,7 @@ class EditorTreeTest extends TestCase
         $heading = $page->nodes()->where('type', 'heading')->first();
         $component->call('toggleVisible', $heading->id);
 
-        $public = app(PageRenderer::class)->render($page->fresh())['html'];
+        $public = $this->publishedRender($page)['html'];
         $this->assertStringNotContainsString('<h2', $public);
 
         // still present (dimmed) in the editor render
@@ -118,7 +118,7 @@ class EditorTreeTest extends TestCase
             ->pluck('html')->implode('');
         $this->assertSame(2, substr_count($editorHtml, 'data-bcolph'));
 
-        $publicHtml = app(PageRenderer::class)->render($page->fresh())['html'];
+        $publicHtml = $this->publishedRender($page)['html'];
         $this->assertStringNotContainsString('bcol-ph', $publicHtml);
     }
 
@@ -194,7 +194,7 @@ class EditorTreeTest extends TestCase
 
         // only the ROOT container is boxed/centered — nested columns must
         // stretch to fill their grid track
-        $css = app(PageRenderer::class)->render($page->fresh()->fill(['published_at' => now()]))['css'];
+        $css = $this->publishedRender($page)['css'];
         $this->assertSame(1, substr_count($css, 'margin-inline:auto'));
     }
 
@@ -218,7 +218,7 @@ class EditorTreeTest extends TestCase
         $this->assertSame(['image'], $right->children()->pluck('type')->all());
 
         // public render: left column wraps its 3 elements in ONE flex div
-        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $html = $this->publishedRender($page)['html'];
         $this->assertSame(1, substr_count($html, 'class="bcol"'));
         $this->assertStringContainsString('<h2', $html);
         $this->assertStringContainsString('<img', $html);
@@ -287,7 +287,7 @@ class EditorTreeTest extends TestCase
 
         Livewire::test(Editor::class, ['page' => $page])->call('addContainer', 1);
 
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
         $this->assertStringContainsString('padding-top:10px', $css);
         $this->assertStringContainsString('padding-left:10px', $css);
     }
@@ -337,7 +337,7 @@ class EditorTreeTest extends TestCase
         $image = $page->nodes()->where('type', 'image')->first();
         $this->assertSame('/buildr-assets/placeholder.svg', $image->setting('content', 'src'));
 
-        $html = app(PageRenderer::class)->render($page->fresh())['html'];
+        $html = $this->publishedRender($page)['html'];
         $this->assertStringContainsString('b-button', $html);
         $this->assertStringContainsString('/buildr-assets/placeholder.svg', $html);
         $this->assertStringContainsString('Lorem ipsum', $html);
@@ -356,7 +356,7 @@ class EditorTreeTest extends TestCase
             ->call('addElement', 'button')
             ->set('settings.content.label', 'Click here..');
 
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
         $this->assertStringContainsString('width:max-content', $css);
         $this->assertStringNotContainsString('width:100%', $css);
 
@@ -364,7 +364,7 @@ class EditorTreeTest extends TestCase
         $component->set('settings.content.align.desktop', 'center')
             ->call('setDevice', 'mobile')
             ->set('settings.content.align.mobile', 'full');
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
         $this->assertStringContainsString('justify-self:center', $css);
         $this->assertStringContainsString('align-self:center', $css);
         $this->assertMatchesRegularExpression('/@media\(max-width:640px\).*width:100%/s', $css);
@@ -384,7 +384,7 @@ class EditorTreeTest extends TestCase
             ->set('settings.content.col_valign', 'space-between')
             ->set('settings.content.element_gap.value', 20);
 
-        $result = app(PageRenderer::class)->render($page->fresh());
+        $result = $this->publishedRender($page);
 
         $this->assertStringContainsString('> .bcol{align-items:center;justify-content:space-between;gap:20px;}', $result['css']);
         // single-child column keeps its wrapper so the flex rules apply
@@ -396,7 +396,7 @@ class EditorTreeTest extends TestCase
             ->call('selectNode', $heading->id)
             ->set('settings.advanced.align.desktop', 'center');
 
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
         $this->assertStringContainsString('align-self:center', $css);
         $this->assertStringContainsString('justify-self:center', $css);
     }
@@ -445,7 +445,7 @@ class EditorTreeTest extends TestCase
             ->set('settings.style.background.hover', '#e8a33d')
             ->set('settings.style.shadow', 'md');
 
-        $css = app(PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString('background:#14324f', $css);
         $this->assertStringContainsString(':hover{background:#e8a33d', $css);

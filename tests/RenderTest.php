@@ -59,7 +59,7 @@ class RenderTest extends TestCase
 
     public function test_container_renders_as_single_semantic_element_with_bare_children(): void
     {
-        $result = app(PageRenderer::class)->render($this->makePage());
+        $result = $this->publishedRender($this->makePage());
         $html = preg_replace('/\s+/', ' ', $result['html']);
 
         // One <section>, exactly one <h1> and one <a> — and no div soup.
@@ -71,7 +71,7 @@ class RenderTest extends TestCase
 
     public function test_style_compiler_emits_grid_tracks_and_responsive_blocks(): void
     {
-        $css = app(PageRenderer::class)->render($this->makePage())['css'];
+        $css = $this->publishedRender($this->makePage())['css'];
 
         $this->assertStringContainsString('grid-template-columns:33fr 67fr', $css);
         $this->assertStringContainsString('background:#f7f9fa', $css);
@@ -93,7 +93,7 @@ class RenderTest extends TestCase
             'data' => ['content' => ['text' => 'Call {{site.phone}}', 'tag' => 'h2']],
         ]);
 
-        $html = app(PageRenderer::class)->render($page)['html'];
+        $html = $this->publishedRender($page)['html'];
 
         $this->assertStringContainsString('Call (410) 555-0114', $html);
     }
@@ -122,6 +122,6 @@ class RenderTest extends TestCase
             'data' => ['content' => ['text' => 'Secret', 'tag' => 'h2']],
         ]);
 
-        $this->assertStringNotContainsString('Secret', app(PageRenderer::class)->render($page)['html']);
+        $this->assertStringNotContainsString('Secret', $this->publishedRender($page)['html']);
     }
 }

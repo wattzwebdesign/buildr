@@ -79,7 +79,7 @@ class Editor extends Component
     {
         $changed = false;
 
-        foreach ($this->page->nodes()->where('type', 'container')->get() as $container) {
+        foreach ($this->draftNodes()->where('type', 'container')->get() as $container) {
             $cols = count($container->data['content']['widths'] ?? [100]);
             if ($cols < 2) {
                 continue;
@@ -157,7 +157,30 @@ class Editor extends Component
 
     public function publish(): void
     {
-        $this->page->update(['published_at' => now()]);
+        \Buildr\Support\Publisher::publish($this->page);
+        $this->page->refresh();
+    }
+
+    public function discardDraft(): void
+    {
+        \Buildr\Support\Publisher::discardDraft($this->page);
+        $this->page->refresh();
+        $first = $this->draftRoots()->orderBy('sort')->first();
+        $first ? $this->selectNode($first->id) : $this->clearSelection();
+    }
+
+    public function restoreRevision(int $revisionId): void
+    {
+        $revision = $this->page->revisions()->whereKey($revisionId)->first();
+        if (! $revision) {
+            return;
+        }
+
+        \Buildr\Support\TreeSnapshot::restore($this->page, $revision->snapshot, asDraft: true);
+        $this->page->touch(); // restored draft differs from published → dirty
+        $this->view = 'edit';
+        $first = $this->draftRoots()->orderBy('sort')->first();
+        $first ? $this->selectNode($first->id) : $this->clearSelection();
     }
 
     /* ---------- library + tree operations ---------- */
@@ -185,7 +208,7 @@ class Editor extends Component
     /** Clicking an empty column: target that container, open the library. */
     public function openLibraryFor(int $containerId): void
     {
-        $node = $this->page->nodes()->whereKey($containerId)->first();
+        $node = $this->draftNodes()->whereKey($containerId)->first();
         if (! $node || $node->type !== 'container') {
             return;
         }
@@ -199,7 +222,7 @@ class Editor extends Component
     /** Drag-and-drop from the library onto a specific container column. */
     public function dropInto(string $type, int $containerId, int $col = 0, int $cols = 1): void
     {
-        $container = $this->page->nodes()->whereKey($containerId)->first();
+        $container = $this->draftNodes()->whereKey($containerId)->first();
         if (! $container || $container->type !== 'container') {
             return;
         }
@@ -232,8 +255,8 @@ class Editor extends Component
     /** Move an existing node before/after another node (drag reorder). */
     public function moveNodeRelative(int $nodeId, int $targetId, string $position): void
     {
-        $node = $this->page->nodes()->whereKey($nodeId)->first();
-        $target = $this->page->nodes()->whereKey($targetId)->first();
+        $node = $this->draftNodes()->whereKey($nodeId)->first();
+        $target = $this->draftNodes()->whereKey($targetId)->first();
 
         if (! $node || ! $target || $node->id === $target->id || ! $target->parent_id) {
             return;
@@ -245,7 +268,7 @@ class Editor extends Component
         $oldParent = $node->parent_id;
         $sort = $target->sort + ($position === 'after' ? 1 : 0);
 
-        $this->page->nodes()->where('parent_id', $target->parent_id)->where('sort', '>=', $sort)->increment('sort');
+        $this->draftNodes()->where('parent_id', $target->parent_id)->where('sort', '>=', $sort)->increment('sort');
 
         $data = $node->data ?? [];
         $data['content']['_col'] = $target->data['content']['_col'] ?? 0;
@@ -260,8 +283,8 @@ class Editor extends Component
     /** Move an existing node into a container column (append). */
     public function moveNodeToColumn(int $nodeId, int $containerId, int $col): void
     {
-        $node = $this->page->nodes()->whereKey($nodeId)->first();
-        $container = $this->page->nodes()->whereKey($containerId)->first();
+        $node = $this->draftNodes()->whereKey($nodeId)->first();
+        $container = $this->draftNodes()->whereKey($containerId)->first();
 
         if (! $node || ! $container || $container->type !== 'container' || $node->id === $container->id) {
             return;
@@ -288,12 +311,12 @@ class Editor extends Component
     /** Is $possibleDescendantId inside $node's subtree (or the node itself)? */
     private function containsNode(PageNode $node, int $possibleDescendantId): bool
     {
-        $current = $this->page->nodes()->whereKey($possibleDescendantId)->first();
+        $current = $this->draftNodes()->whereKey($possibleDescendantId)->first();
         while ($current) {
             if ($current->id === $node->id) {
                 return true;
             }
-            $current = $current->parent_id ? $this->page->nodes()->whereKey($current->parent_id)->first() : null;
+            $current = $current->parent_id ? $this->draftNodes()->whereKey($current->parent_id)->first() : null;
         }
 
         return false;
@@ -327,6 +350,53 @@ class Editor extends Component
             'font_body_weight' => \Buildr\Models\SiteSetting::get('font_body_weight', ''),
             'base_size' => \Buildr\Models\SiteSetting::get('base_size', ''),
         ];
+    }
+
+    /* ---------- page settings ---------- */
+
+    public array $pageForm = [];
+
+    public bool $pageDirty = false;
+
+    public function openPage(): void
+    {
+        $this->view = 'page';
+        $this->pageDirty = false;
+        $this->pageForm = [
+            'title' => $this->page->title,
+            'slug' => $this->page->slug,
+            'seo_title' => $this->page->seo_title,
+            'seo_description' => $this->page->seo_description,
+        ];
+    }
+
+    public function updatedPageForm(): void
+    {
+        $this->pageDirty = true;
+    }
+
+    public function savePage(): void
+    {
+        $slug = \Illuminate\Support\Str::slug($this->pageForm['slug'] ?: $this->pageForm['title']) ?: $this->page->slug;
+        $base = $slug;
+        for ($i = 2; \Buildr\Models\Page::where('slug', $slug)->whereKeyNot($this->page->id)->exists(); $i++) {
+            $slug = "{$base}-{$i}";
+        }
+
+        $this->page->update([
+            'title' => trim($this->pageForm['title']) ?: $this->page->title,
+            'slug' => $slug,
+            'seo_title' => $this->pageForm['seo_title'] ?: null,
+            'seo_description' => $this->pageForm['seo_description'] ?: null,
+        ]);
+
+        $this->pageForm['slug'] = $slug;
+        $this->pageDirty = false;
+    }
+
+    public function openHistory(): void
+    {
+        $this->view = 'history';
     }
 
     public bool $siteDirty = false;
@@ -394,7 +464,7 @@ class Editor extends Component
             $this->resequence($current->id);
         } elseif ($current && $current->parent_id) {
             $sort = $current->sort + 1;
-            $this->page->nodes()->where('parent_id', $current->parent_id)->where('sort', '>=', $sort)->increment('sort');
+            $this->draftNodes()->where('parent_id', $current->parent_id)->where('sort', '>=', $sort)->increment('sort');
             $node = $this->page->nodes()->create([
                 'type' => 'container',
                 'parent_id' => $current->parent_id,
@@ -479,7 +549,7 @@ class Editor extends Component
         } else {
             $parent = $this->page->nodes()->create([
                 'type' => 'container',
-                'sort' => ($this->page->rootNodes()->max('sort') ?? -1) + 1,
+                'sort' => ($this->draftRoots()->max('sort') ?? -1) + 1,
                 'data' => $this->containerData(1),
             ]);
             $sort = 0;
@@ -500,7 +570,7 @@ class Editor extends Component
 
     public function moveNode(int $id, string $dir): void
     {
-        $node = $this->page->nodes()->whereKey($id)->first();
+        $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
         }
@@ -525,7 +595,7 @@ class Editor extends Component
 
     public function duplicateNode(int $id): void
     {
-        $node = $this->page->nodes()->whereKey($id)->first();
+        $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
         }
@@ -542,7 +612,7 @@ class Editor extends Component
 
     public function deleteNode(int $id): void
     {
-        $node = $this->page->nodes()->whereKey($id)->first();
+        $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
         }
@@ -554,7 +624,7 @@ class Editor extends Component
         $this->page->touch();
 
         if ($this->selectedId === $id || ! $this->node()) {
-            $fallback = $parentId ?: $this->page->rootNodes()->first()?->id;
+            $fallback = $parentId ?: $this->draftRoots()->first()?->id;
             $fallback ? $this->selectNode($fallback) : $this->clearSelection();
         }
     }
@@ -565,7 +635,7 @@ class Editor extends Component
 
     public function copyToClipboard(int $id): void
     {
-        if ($this->page->nodes()->whereKey($id)->exists()) {
+        if ($this->draftNodes()->whereKey($id)->exists()) {
             $this->clipboardId = $id;
         }
     }
@@ -573,14 +643,14 @@ class Editor extends Component
     /** Paste the copied subtree as a sibling right after the target node. */
     public function pasteAfter(int $targetId): void
     {
-        $clip = $this->clipboardId ? $this->page->nodes()->whereKey($this->clipboardId)->first() : null;
-        $target = $this->page->nodes()->whereKey($targetId)->first();
+        $clip = $this->clipboardId ? $this->draftNodes()->whereKey($this->clipboardId)->first() : null;
+        $target = $this->draftNodes()->whereKey($targetId)->first();
 
         if (! $clip || ! $target || $this->containsNode($clip, $targetId)) {
             return;
         }
 
-        $this->page->nodes()->where('parent_id', $target->parent_id)
+        $this->draftNodes()->where('parent_id', $target->parent_id)
             ->where('sort', '>', $target->sort)->increment('sort');
 
         $copy = $this->copyNode($clip, $target->parent_id, $target->sort + 1);
@@ -597,8 +667,8 @@ class Editor extends Component
     /** Apply the copied node's Style-tab settings to the target. */
     public function pasteStyleTo(int $targetId): void
     {
-        $clip = $this->clipboardId ? $this->page->nodes()->whereKey($this->clipboardId)->first() : null;
-        $target = $this->page->nodes()->whereKey($targetId)->first();
+        $clip = $this->clipboardId ? $this->draftNodes()->whereKey($this->clipboardId)->first() : null;
+        $target = $this->draftNodes()->whereKey($targetId)->first();
 
         if (! $clip || ! $target) {
             return;
@@ -613,7 +683,7 @@ class Editor extends Component
 
     public function resetStyle(int $id): void
     {
-        $node = $this->page->nodes()->whereKey($id)->first();
+        $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
         }
@@ -627,7 +697,7 @@ class Editor extends Component
 
     public function toggleVisible(int $id): void
     {
-        $node = $this->page->nodes()->whereKey($id)->first();
+        $node = $this->draftNodes()->whereKey($id)->first();
         $node?->update(['visible' => ! $node->visible]);
         $this->page->touch();
     }
@@ -641,18 +711,18 @@ class Editor extends Component
     private function insertSort(): int
     {
         if ($this->insertAfter === null) {
-            return ($this->page->rootNodes()->max('sort') ?? -1) + 1;
+            return ($this->draftRoots()->max('sort') ?? -1) + 1;
         }
 
         if ($this->insertAfter === 0) {
-            $this->page->rootNodes()->increment('sort');
+            $this->draftRoots()->increment('sort');
 
             return 0;
         }
 
-        $after = $this->page->rootNodes()->whereKey($this->insertAfter)->first();
+        $after = $this->draftRoots()->whereKey($this->insertAfter)->first();
         $sort = ($after?->sort ?? -1) + 1;
-        $this->page->rootNodes()->where('sort', '>=', $sort)->increment('sort');
+        $this->draftRoots()->where('sort', '>=', $sort)->increment('sort');
 
         return $sort;
     }
@@ -778,8 +848,19 @@ class Editor extends Component
     private function node(): ?PageNode
     {
         return $this->selectedId
-            ? $this->page->nodes()->whereKey($this->selectedId)->first()
+            ? $this->draftNodes()->whereKey($this->selectedId)->first()
             : null;
+    }
+
+    /** All editor operations act on the DRAFT tree only. */
+    private function draftNodes()
+    {
+        return $this->page->nodes()->where('is_draft', true);
+    }
+
+    private function draftRoots()
+    {
+        return $this->draftNodes()->whereNull('parent_id');
     }
 
     private function elementClass(PageNode $node): string
@@ -903,7 +984,7 @@ class Editor extends Component
         };
 
         $tree = $walk(
-            $this->page->nodes()->whereNull('parent_id')->with('children.children.children')->orderBy('sort')->get(),
+            $this->draftRoots()->with('children.children.children')->orderBy('sort')->get(),
             0
         );
 
@@ -915,6 +996,9 @@ class Editor extends Component
             'tree' => $tree,
             'isChild' => (bool) $node?->parent_id,
             'globalSwatches' => \Buildr\Render\GlobalCss::swatches(),
+            'revisions' => $this->view === 'history'
+                ? $this->page->revisions()->latest('id')->take(25)->get(['id', 'label', 'created_at'])
+                : collect(),
             'dynTags' => [
                 'Site Name' => '{{site.name}}',
                 'Phone Number' => '{{site.phone}}',

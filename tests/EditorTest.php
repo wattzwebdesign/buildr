@@ -73,7 +73,7 @@ class EditorTest extends TestCase
             ->call('setDevice', 'mobile')
             ->set('settings.style.font_size.mobile.value', 30);
 
-        $css = app(\Buildr\Render\PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString('font-size:52px', $css);
         $this->assertStringContainsString('color:#14324f', $css);
@@ -92,7 +92,7 @@ class EditorTest extends TestCase
             ->set('settings.advanced.padding.desktop.bottom.value', 3)
             ->call('setSidesUnit', 'advanced', 'padding', 'em', 'desktop');
 
-        $css = app(\Buildr\Render\PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString('padding-top:2em', $css);
         $this->assertStringContainsString('padding-bottom:3em', $css);
@@ -109,7 +109,7 @@ class EditorTest extends TestCase
             ->set('settings.style.border_color', '#000000')
             ->set('settings.style.border_width.top.value', 5);
 
-        $css = app(\Buildr\Render\PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString('border-top-width:5px', $css);
         $this->assertStringContainsString('border-style:solid', $css);
@@ -126,7 +126,7 @@ class EditorTest extends TestCase
             ->call('selectNode', $container->id)
             ->call('setWidths', '33,67');
 
-        $css = app(\Buildr\Render\PageRenderer::class)->render($page->fresh())['css'];
+        $css = $this->publishedRender($page)['css'];
 
         $this->assertStringContainsString('grid-template-columns:33fr 67fr', $css);
     }
