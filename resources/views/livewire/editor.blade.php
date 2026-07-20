@@ -73,7 +73,7 @@ body{overflow:hidden}
         <button class="ph-btn" @click="m = !m" title="Menu" style="display:grid;place-items:center">
           <svg class="ic" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div class="menu" :class="m && 'open'" x-cloak @click.outside="m = false">
+        <div class="menu" :class="m && 'open'" @click.outside="m = false">
           <a href="{{ route('buildr.pages') }}">
             <svg class="ic" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M5 12h14"/></svg> Back to Admin
           </a>
