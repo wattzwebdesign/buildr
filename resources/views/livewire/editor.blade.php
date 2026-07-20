@@ -90,6 +90,9 @@ body{overflow:hidden}
           <button type="button" @click="m = false; $wire.toggleNav()">
             <svg class="ic" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg> Navigator
           </button>
+          <button type="button" @click="m = false; window.dispatchEvent(new CustomEvent('open-shortcuts'))">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M18 14h0M10 14h4"/></svg> Keyboard Shortcuts
+          </button>
         </div>
       </div>
       <div class="ph-title">
@@ -393,6 +396,14 @@ body{overflow:hidden}
         <span>{{ $page->title }}</span>
         <span class="status mono">{{ strtoupper($page->updated_at->diffForHumans(short: true)) }}</span>
       </div>
+      <div class="devices" style="margin-right:8px">
+        <button wire:click="undo" title="Undo ({{ '⌘Z / Ctrl+Z' }})" style="{{ $undoCount ? '' : 'opacity:.3;pointer-events:none' }}">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button wire:click="redo" title="Redo ({{ '⇧⌘Z / Ctrl+Y' }})" style="{{ $redoCount ? '' : 'opacity:.3;pointer-events:none' }}">
+          <svg class="ic" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+      </div>
       <div class="devices" title="Preview + edit responsive values for this device">
         <button class="{{ $device === 'desktop' ? 'on' : '' }}" wire:click="setDevice('desktop')" title="Desktop">
           <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -479,6 +490,34 @@ body{overflow:hidden}
         inp.value = inp.value.slice(0, s) + token + inp.value.slice(e);
         inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
+      // ---- keyboard shortcuts (mac ⌘ / pc Ctrl) ----
+      const isTyping = () => {
+        const a = document.activeElement;
+        return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable);
+      };
+      const modalOpen = () =>
+        [...document.querySelectorAll('.ipk-overlay')].some(o => o.offsetParent !== null)
+        || document.getElementById('bcf')?.style.display === 'flex';
+
+      document.addEventListener('keydown', e => {
+        const w = window.Livewire?.all()[0]?.$wire;
+        if (!w) return;
+        const mod = e.metaKey || e.ctrlKey;
+        const k = e.key.toLowerCase();
+
+        if (mod && k === 'z' && !isTyping()) { e.preventDefault(); e.shiftKey ? w.redo() : w.undo(); return; }
+        if (mod && k === 'y' && !isTyping()) { e.preventDefault(); w.redo(); return; }
+        if (mod && k === 's') { e.preventDefault(); w.publish(); return; }
+
+        if (isTyping() || modalOpen()) return;
+        const id = w.selectedId;
+        if (mod && k === 'd' && id) { e.preventDefault(); w.duplicateNode(id); return; }
+        if (mod && k === 'c' && id && !getSelection().toString()) { w.copyToClipboard(id); return; }
+        if (mod && k === 'v' && id) { w.pasteAfter(id); return; }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && id) { e.preventDefault(); w.deleteNode(id); return; }
+        if (e.key === 'Escape' && id) w.deselect();
+      });
+
       window.navPanel = () => ({
         x: null, y: null, dx: 0, dy: 0, moving: false, collapsed: [],
         init() {
@@ -1018,4 +1057,35 @@ body{overflow:hidden}
   </main>
 
   @include('buildr::livewire.partials.medialib')
+
+  <div x-data="{ o: false }" x-show="o" style="display:none" class="ipk-overlay"
+       @open-shortcuts.window="o = true" @click.self="o = false" @keydown.escape.window="o = false">
+    <div class="ipk-modal" style="max-width:440px">
+      <div class="ipk-head" style="padding-bottom:4px">
+        <b style="flex:1;font-size:13.5px">Keyboard Shortcuts</b>
+        <button type="button" class="ipk-x" @click="o = false" title="Close">
+          <svg class="ic" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ksh">
+        @foreach ([
+          ['Undo', '⌘Z', 'Ctrl+Z'],
+          ['Redo', '⇧⌘Z', 'Ctrl+Y'],
+          ['Update (publish)', '⌘S', 'Ctrl+S'],
+          ['Duplicate selected', '⌘D', 'Ctrl+D'],
+          ['Copy selected', '⌘C', 'Ctrl+C'],
+          ['Paste after selected', '⌘V', 'Ctrl+V'],
+          ['Delete selected', 'Delete', 'Del / Backspace'],
+          ['Deselect', 'Esc', 'Esc'],
+        ] as [$what, $mac, $pc])
+          <div class="ksh-row">
+            <span>{{ $what }}</span>
+            <span class="kbd">{{ $mac }}</span>
+            <span class="kbd">{{ $pc }}</span>
+          </div>
+        @endforeach
+        <div class="fld-hint" style="margin-top:10px">Element shortcuts act on the selected element when you're not typing in a field. Everything is undoable.</div>
+      </div>
+    </div>
+  </div>
 </div>

@@ -167,14 +167,89 @@ class Editor extends Component
 
     public function discardDraft(): void
     {
+        $this->pushHistory();
         \Buildr\Support\Publisher::discardDraft($this->page);
         $this->page->refresh();
         $first = $this->draftRoots()->orderBy('sort')->first();
         $first ? $this->selectNode($first->id) : $this->clearSelection();
     }
 
+    /* ---------- undo / redo (action-level, session-scoped) ---------- */
+
+    /** Per-request guard so nested mutators produce one undo step. */
+    private bool $historyPushed = false;
+
+    private function historyKey(string $stack): string
+    {
+        return "buildr.history.{$this->page->id}.".session()->getId().".{$stack}";
+    }
+
+    /**
+     * Snapshot the draft tree before a mutation. Rapid edits sharing a
+     * signature (typing in one node/tab) coalesce into a single undo step.
+     */
+    private function pushHistory(?string $signature = null): void
+    {
+        if ($this->historyPushed) {
+            return;
+        }
+        $this->historyPushed = true;
+
+        $undo = cache()->get($this->historyKey('undo'), []);
+        $lastKey = $undo === [] ? null : array_key_last($undo);
+
+        if ($signature !== null && $lastKey !== null
+            && ($undo[$lastKey]['sig'] ?? null) === $signature
+            && time() - ($undo[$lastKey]['at'] ?? 0) < 3) {
+            $undo[$lastKey]['at'] = time();
+            cache()->put($this->historyKey('undo'), $undo, now()->addHours(6));
+
+            return;
+        }
+
+        $undo[] = ['tree' => \Buildr\Support\TreeSnapshot::capture($this->page), 'sig' => $signature, 'at' => time()];
+        cache()->put($this->historyKey('undo'), array_slice($undo, -50), now()->addHours(6));
+        cache()->forget($this->historyKey('redo'));
+    }
+
+    public function undo(): void
+    {
+        $this->shiftHistory('undo', 'redo');
+    }
+
+    public function redo(): void
+    {
+        $this->shiftHistory('redo', 'undo');
+    }
+
+    private function shiftHistory(string $from, string $to): void
+    {
+        $source = cache()->get($this->historyKey($from), []);
+        $current = \Buildr\Support\TreeSnapshot::capture($this->page);
+
+        // skip no-op entries (a mutator that early-returned after pushing)
+        do {
+            $entry = array_pop($source);
+        } while ($entry !== null && $entry['tree'] == $current);
+
+        cache()->put($this->historyKey($from), $source, now()->addHours(6));
+        if ($entry === null) {
+            return;
+        }
+
+        $dest = cache()->get($this->historyKey($to), []);
+        $dest[] = ['tree' => $current, 'sig' => null, 'at' => time()];
+        cache()->put($this->historyKey($to), array_slice($dest, -50), now()->addHours(6));
+        $this->historyPushed = true; // restoring must not re-push
+
+        \Buildr\Support\TreeSnapshot::restore($this->page, $entry['tree']);
+        $this->page->touch();
+        $this->clearSelection();
+    }
+
     public function restoreRevision(int $revisionId): void
     {
+        $this->pushHistory();
         $revision = $this->page->revisions()->whereKey($revisionId)->first();
         if (! $revision) {
             return;
@@ -226,6 +301,7 @@ class Editor extends Component
     /** Drag-and-drop from the library onto a specific container column. */
     public function dropInto(string $type, int $containerId, int $col = 0, int $cols = 1): void
     {
+        $this->pushHistory();
         $container = $this->draftNodes()->whereKey($containerId)->first();
         if (! $container || $container->type !== 'container') {
             return;
@@ -253,12 +329,14 @@ class Editor extends Component
     /** BC alias — old drop path without a column. */
     public function dropElement(string $type, int $containerId, int $cols = 1): void
     {
+        $this->pushHistory();
         $this->dropInto($type, $containerId, 0, $cols);
     }
 
     /** Move an existing node before/after another node (drag reorder). */
     public function moveNodeRelative(int $nodeId, int $targetId, string $position): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($nodeId)->first();
         $target = $this->draftNodes()->whereKey($targetId)->first();
 
@@ -292,6 +370,7 @@ class Editor extends Component
     /** Move an existing node into a container column (append). */
     public function moveNodeToColumn(int $nodeId, int $containerId, int $col): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($nodeId)->first();
         $container = $this->draftNodes()->whereKey($containerId)->first();
 
@@ -463,6 +542,7 @@ class Editor extends Component
 
     public function addContainer(int $cols): void
     {
+        $this->pushHistory();
         $data = $this->containerData($cols);
 
         // A "+" gap picked a page-level spot — insert a root section there.
@@ -506,6 +586,7 @@ class Editor extends Component
     /** Drop a Layout card onto a page-level "+" gap. */
     public function dropContainerAt(int $cols, int $afterRootId): void
     {
+        $this->pushHistory();
         $this->insertAfter = $afterRootId;
         $this->addContainer($cols);
     }
@@ -513,6 +594,7 @@ class Editor extends Component
     /** Drop an element onto a page-level "+" gap: new container wraps it. */
     public function dropElementAt(string $type, int $afterRootId): void
     {
+        $this->pushHistory();
         $this->insertAfter = $afterRootId;
         $this->addContainer(1);          // selects the new container
         $this->addElement($type);
@@ -540,6 +622,7 @@ class Editor extends Component
 
     public function addElement(string $type, ?int $col = null): void
     {
+        $this->pushHistory();
         $registry = app(ElementRegistry::class);
         if (! $registry->has($type)) {
             return;
@@ -586,6 +669,7 @@ class Editor extends Component
 
     public function moveNode(int $id, string $dir): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
@@ -611,6 +695,7 @@ class Editor extends Component
 
     public function duplicateNode(int $id): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
@@ -628,6 +713,7 @@ class Editor extends Component
 
     public function deleteNode(int $id): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
@@ -659,6 +745,7 @@ class Editor extends Component
     /** Paste the copied subtree as a sibling right after the target node. */
     public function pasteAfter(int $targetId): void
     {
+        $this->pushHistory();
         $clip = $this->clipboardId ? $this->draftNodes()->whereKey($this->clipboardId)->first() : null;
         $target = $this->draftNodes()->whereKey($targetId)->first();
 
@@ -683,6 +770,7 @@ class Editor extends Component
     /** Apply the copied node's Style-tab settings to the target. */
     public function pasteStyleTo(int $targetId): void
     {
+        $this->pushHistory();
         $clip = $this->clipboardId ? $this->draftNodes()->whereKey($this->clipboardId)->first() : null;
         $target = $this->draftNodes()->whereKey($targetId)->first();
 
@@ -699,6 +787,7 @@ class Editor extends Component
 
     public function resetStyle(int $id): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
@@ -714,6 +803,7 @@ class Editor extends Component
     /** Custom node name shown in navigator/chips (stored as _label). */
     public function renameNode(int $id, string $name): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         if (! $node) {
             return;
@@ -732,9 +822,15 @@ class Editor extends Component
 
     public function toggleVisible(int $id): void
     {
+        $this->pushHistory();
         $node = $this->draftNodes()->whereKey($id)->first();
         $node?->update(['visible' => ! $node->visible]);
         $this->page->touch();
+    }
+
+    public function deselect(): void
+    {
+        $this->clearSelection();
     }
 
     private function clearSelection(): void
@@ -831,6 +927,7 @@ class Editor extends Component
     /** Container structure preset, e.g. "50,50". */
     public function setWidths(string $preset): void
     {
+        $this->pushHistory();
         $widths = array_values(array_filter(array_map('intval', explode(',', $preset))));
         if ($widths === []) {
             return;
@@ -842,6 +939,7 @@ class Editor extends Component
 
     public function addRepeaterItem(string $tab, string $key): void
     {
+        $this->pushHistory();
         $node = $this->node();
         if (! $node) {
             return;
@@ -862,6 +960,7 @@ class Editor extends Component
 
     public function removeRepeaterItem(string $tab, string $key, int $index): void
     {
+        $this->pushHistory();
         unset($this->settings[$tab][$key][$index]);
         $this->settings[$tab][$key] = array_values($this->settings[$tab][$key]);
         $this->persistTab($tab);
@@ -870,6 +969,7 @@ class Editor extends Component
     /** Change the unit on all four sides of a sides-control at once. */
     public function setSidesUnit(string $tab, string $key, string $unit, ?string $device = null): void
     {
+        $this->pushHistory();
         $target = &$this->settings[$tab][$key];
         if ($device !== null) {
             $target = &$target[$device];
@@ -886,6 +986,7 @@ class Editor extends Component
 
     private function persistTab(string $tab): void
     {
+        $this->pushHistory("settings:{$this->selectedId}:{$tab}");
         $node = $this->node();
         if (! $node || ! isset($this->settings[$tab])) {
             return;
@@ -1085,6 +1186,8 @@ class Editor extends Component
                 'Page Title' => '{{page.title}}',
                 'Page URL' => '{{page.url}}',
             ],
+            'undoCount' => count(cache()->get($this->historyKey('undo'), [])),
+            'redoCount' => count(cache()->get($this->historyKey('redo'), [])),
             'recentMedia' => \Buildr\Models\Media::latest()->take(12)->get()
                 ->map(fn ($m) => ['url' => $m->url(), 'name' => $m->name])->all(),
             'allMedia' => \Buildr\Models\Media::latest()->get()

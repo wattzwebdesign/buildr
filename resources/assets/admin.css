@@ -838,3 +838,9 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 .mlb-thumb{display:block;aspect-ratio:4/3;border-radius:6px;background-color:var(--panel-bg);background-size:cover;background-position:center}
 .mlb-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mlb-meta{font-size:10px;color:var(--muted)}
+
+/* ---- keyboard shortcuts modal ---- */
+.ksh{padding:6px 16px 16px}
+.ksh-row{display:grid;grid-template-columns:1fr 90px 110px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-line);font-size:12.5px}
+.ksh-row:last-of-type{border-bottom:none}
+.kbd{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);background:var(--panel-bg);border:1px solid var(--panel-line);border-radius:6px;padding:3px 7px;text-align:center;justify-self:start}

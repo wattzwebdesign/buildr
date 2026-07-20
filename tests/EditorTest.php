@@ -148,6 +148,45 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('grid-template-columns:1fr;', $css);
     }
 
+    public function test_undo_redo_walk_tree_and_setting_mutations(): void
+    {
+        $page = $this->pageWithHero();
+        $container = $page->nodes()->where('type', 'container')->first();
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('selectNode', $container->id)
+            ->call('addElement', 'button');
+        $this->assertSame(1, $page->nodes()->where('type', 'button')->count());
+
+        // undo removes the button, redo brings it back
+        $component->call('undo');
+        $this->assertSame(0, $page->nodes()->where('type', 'button')->count());
+        $component->call('redo');
+        $this->assertSame(1, $page->nodes()->where('type', 'button')->count());
+
+        // setting edits are undoable too — a burst of edits is one step
+        $heading = $page->nodes()->where('is_draft', true)->where('type', 'heading')->first();
+        $component->call('selectNode', $heading->id)
+            ->set('settings.content.text', 'Changed once')
+            ->set('settings.content.text', 'Changed twice');
+        $component->call('undo');
+        $fresh = $page->nodes()->where('is_draft', true)->where('type', 'heading')->first();
+        $this->assertSame('Original headline', $fresh->setting('content', 'text'));
+
+        // deleting is undoable
+        $fresh2 = $page->nodes()->where('is_draft', true)->where('type', 'heading')->first();
+        $component->call('deleteNode', $fresh2->id);
+        $this->assertSame(0, $page->nodes()->where('is_draft', true)->where('type', 'heading')->count());
+        $component->call('undo');
+        $this->assertSame(1, $page->nodes()->where('is_draft', true)->where('type', 'heading')->count());
+
+        // a fresh mutation clears the redo stack
+        $component->call('addElement', 'divider')->call('undo')->call('addElement', 'spacer');
+        $component->call('redo'); // nothing to redo — divider must not reappear
+        $this->assertSame(0, $page->nodes()->where('type', 'divider')->count());
+        $this->assertSame(1, $page->nodes()->where('type', 'spacer')->count());
+    }
+
     public function test_responsive_button_padding_compiles_per_device(): void
     {
         $page = $this->pageWithHero();
