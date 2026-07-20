@@ -286,10 +286,7 @@ body{overflow:hidden}
     @else
       <!-- ============ EDIT PANEL ============ -->
       <div class="panel-context">
-        <div>
-          <div class="ctx-kicker">Editing · {{ $page->title }}</div>
-          <div class="ctx-name">{{ $schema['label'] ?? 'Nothing selected' }}</div>
-        </div>
+        <div class="ctx-name">{{ $schema['label'] ?? 'Nothing selected' }}</div>
         <span class="ctx-chip">{{ strtoupper($schema['group'] ?? '—') }}</span>
       </div>
 
