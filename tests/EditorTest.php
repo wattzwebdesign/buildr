@@ -148,6 +148,31 @@ class EditorTest extends TestCase
         $this->assertStringContainsString('grid-template-columns:1fr;', $css);
     }
 
+    public function test_dynamic_tags_resolve_in_attributes_and_nested_fields(): void
+    {
+        \Buildr\Models\SiteSetting::set('phone', '(410) 555-0114');
+
+        $page = $this->pageWithHero();
+        $container = $page->nodes()->where('type', 'container')->first();
+        $heading = $page->nodes()->where('type', 'heading')->first();
+
+        // tags in advanced attributes (anchor id + css classes)
+        $heading->update(['data' => array_merge($heading->data, [
+            'advanced' => ['anchor_id' => 'sec-{{page.slug}}', 'css_class' => 'promo-{{year}}'],
+        ])]);
+
+        // tag nested inside a link field
+        $page->nodes()->create([
+            'type' => 'button', 'parent_id' => $container->id, 'sort' => 5,
+            'data' => ['content' => ['label' => 'Call us', 'link' => ['url' => '{{site.phone_link}}']]],
+        ]);
+
+        $html = $this->publishedRender($page)['html'];
+        $this->assertStringContainsString('id="sec-home"', $html);
+        $this->assertStringContainsString('promo-'.now()->format('Y'), $html);
+        $this->assertStringContainsString('href="tel:4105550114"', $html);
+    }
+
     public function test_undo_redo_walk_tree_and_setting_mutations(): void
     {
         $page = $this->pageWithHero();

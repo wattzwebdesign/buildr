@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-gallery '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-gallery '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
 @endphp
 <div class="{{ $classes }}">
 @foreach (($images ?? []) as $img)

@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-accordion '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-accordion '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
     $group = 'acc-'.$node->id;
 @endphp
 <div class="{{ $classes }}">

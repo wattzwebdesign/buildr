@@ -1,7 +1,7 @@
 @php
     $htmlTag = $tag ?? 'div';
-    $classes = trim($node->cssId().' '.($node->setting('advanced', 'css_class') ?? ''));
-    $anchor = $node->setting('advanced', 'anchor_id');
+    $classes = trim($node->cssId().' '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
+    $anchor = $renderer->tags()->resolve($node->setting('advanced', 'anchor_id'), ['page' => $node->page]);
     $cols = count($widths ?? [100]);
     $columns = $renderer->renderContainerColumns($node, $cols);
     $editor = $renderer->isEditor();

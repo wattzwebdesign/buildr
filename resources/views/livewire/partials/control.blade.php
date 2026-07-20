@@ -45,7 +45,7 @@
           </div>
         </span>
       @endif
-      @if ($tab === 'content' && in_array($field['type'], ['text', 'textarea', 'richtext', 'link']) && !empty($dynTags))
+      @if (!empty($dynTags) && (($tab === 'content' && in_array($field['type'], ['text', 'textarea', 'richtext', 'link', 'media'])) || ($tab === 'advanced' && $field['type'] === 'text')))
         <span x-data="{ o: false }" style="{{ $responsive ? '' : 'margin-left:auto;' }}position:relative">
           <button type="button" title="Insert dynamic tag" @click="o = !o" style="color:var(--accent);display:grid;place-items:center">
             <svg class="ic" viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;stroke:none"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5z"/></svg>

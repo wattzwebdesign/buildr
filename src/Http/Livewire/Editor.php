@@ -1184,6 +1184,8 @@ class Editor extends Component
                 'Current Year' => '{{year}}',
                 "Today's Date" => '{{date:F j, Y}}',
                 'Page Title' => '{{page.title}}',
+                'Page Slug' => '{{page.slug}}',
+                'Site URL' => '{{site.url}}',
                 'Page URL' => '{{page.url}}',
             ],
             'undoCount' => count(cache()->get($this->historyKey('undo'), [])),

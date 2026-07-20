@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-form b-button-scope '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-form b-button-scope '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
     $sent = request('sent') === $node->cssId();
 @endphp
 <div class="{{ $classes }}">

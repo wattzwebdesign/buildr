@@ -99,15 +99,23 @@ abstract class Element
 
         foreach (static::contentFields() as $field) {
             $content[$field->key] ??= $field->default;
-
-            if (is_string($content[$field->key])) {
-                $content[$field->key] = $renderer->tags()->resolve($content[$field->key], [
-                    'page' => $this->node->page,
-                ]);
-            }
+            $content[$field->key] = $this->resolveTags($content[$field->key], $renderer);
         }
 
         return $content + ['node' => $this->node, 'renderer' => $renderer];
+    }
+
+    /** Resolve {{tags}} in a value — strings directly, arrays recursively. */
+    private function resolveTags(mixed $value, PageRenderer $renderer): mixed
+    {
+        if (is_string($value)) {
+            return $renderer->tags()->resolve($value, ['page' => $this->node->page]);
+        }
+        if (is_array($value)) {
+            return array_map(fn ($v) => $this->resolveTags($v, $renderer), $value);
+        }
+
+        return $value;
     }
 
     public function render(PageRenderer $renderer): string

@@ -37,7 +37,9 @@ class TagRegistry
         });
 
         $this->register('year', fn () => Carbon::now()->format('Y'));
+        $this->register('site.url', fn () => url('/'));
         $this->register('page.title', fn (array $ctx = []) => $ctx['page']->title ?? '');
+        $this->register('page.slug', fn (array $ctx = []) => $ctx['page']->slug ?? '');
         $this->register('page.url', fn (array $ctx = []) => isset($ctx['page']) ? url($ctx['page']->slug) : '');
     }
 

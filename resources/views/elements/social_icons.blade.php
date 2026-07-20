@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-social '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-social '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
 @endphp
 <div class="{{ $classes }}">
 @foreach (($accounts ?? []) as $account)

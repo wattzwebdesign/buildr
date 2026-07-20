@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-video '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-video '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
     $embed = null;
     if ($url) {
         if (preg_match('~(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]+)~', $url, $m)) {

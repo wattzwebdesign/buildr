@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-tabs '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-tabs '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
     $group = 'tb-'.$node->id;
 @endphp
 <div class="{{ $classes }}" style="position:relative">

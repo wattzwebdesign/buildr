@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-iconlist '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-iconlist '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
 @endphp
 <ul class="{{ $classes }}">
 @foreach (($items ?? []) as $item)

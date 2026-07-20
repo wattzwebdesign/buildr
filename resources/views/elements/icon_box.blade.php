@@ -1,5 +1,5 @@
 @php
-    $classes = trim($node->cssId().' b-iconbox '.($node->setting('advanced', 'css_class') ?? ''));
+    $classes = trim($node->cssId().' b-iconbox '.($renderer->tags()->resolve($node->setting('advanced', 'css_class'), ['page' => $node->page]) ?? ''));
     $url = $link['url'] ?? null;
 @endphp
 <div class="{{ $classes }}">
