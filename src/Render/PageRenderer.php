@@ -69,7 +69,7 @@ class PageRenderer
             $roots[] = [
                 'id' => $node->id,
                 'type' => $node->type,
-                'label' => $this->elements->get($node->type)::label(),
+                'label' => $node->data['content']['_label'] ?? $this->elements->get($node->type)::label(),
                 'html' => $this->renderNode($node, $compiler),
             ];
         }
@@ -138,7 +138,7 @@ class PageRenderer
 
         if ($this->editorMode) {
             $attrs = 'data-bnode="'.$node->id.'"';
-            $attrs .= ' data-blabel="'.e($this->elements->get($node->type)::label()).'"';
+            $attrs .= ' data-blabel="'.e($node->data['content']['_label'] ?? $this->elements->get($node->type)::label()).'"';
             if ($node->type === 'container') {
                 $attrs .= ' data-bcontainer="'.$node->id.'"';
             }

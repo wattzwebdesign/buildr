@@ -486,6 +486,33 @@ class EditorTreeTest extends TestCase
         $this->assertSame(1, $page->rootNodes()->count());
     }
 
+    public function test_rename_node_and_root_level_relative_move(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 1);
+        $a = $page->rootNodes()->first()->id;
+        $component->call('openLibrary', $a)->call('addContainer', 2);
+        [$a, $b] = $page->rootNodes()->orderBy('sort')->pluck('id')->all();
+
+        // rename shows in the navigator tree + section chips
+        $component->call('renameNode', $a, 'Hero Section');
+        $this->assertSame('Hero Section',
+            $page->nodes()->whereKey($a)->first()->data['content']['_label']);
+        $editor = app(PageRenderer::class)->renderEditor($page->fresh());
+        $this->assertSame('Hero Section', $editor['roots'][0]['label']);
+
+        // drag reorder at page level via relative move
+        $component->call('moveNodeRelative', $b, $a, 'before');
+        $this->assertSame([$b, $a], $page->rootNodes()->orderBy('sort')->pluck('id')->all());
+
+        // rename survives content edits (underscore keys preserved)
+        $component->call('selectNode', $a)->set('settings.content.gap.desktop.value', 30);
+        $this->assertSame('Hero Section',
+            $page->nodes()->whereKey($a)->first()->data['content']['_label']);
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);

@@ -258,11 +258,14 @@ class Editor extends Component
         $node = $this->draftNodes()->whereKey($nodeId)->first();
         $target = $this->draftNodes()->whereKey($targetId)->first();
 
-        if (! $node || ! $target || $node->id === $target->id || ! $target->parent_id) {
+        if (! $node || ! $target || $node->id === $target->id) {
             return;
         }
-        if ($this->containsNode($node, $target->parent_id)) {
+        if ($target->parent_id && $this->containsNode($node, $target->parent_id)) {
             return; // can't move a container inside itself
+        }
+        if (! $target->parent_id && $node->parent_id === null && $node->type !== 'container') {
+            return; // bare elements can't become page roots
         }
 
         $oldParent = $node->parent_id;
@@ -271,7 +274,9 @@ class Editor extends Component
         $this->draftNodes()->where('parent_id', $target->parent_id)->where('sort', '>=', $sort)->increment('sort');
 
         $data = $node->data ?? [];
-        $data['content']['_col'] = $target->data['content']['_col'] ?? 0;
+        if ($target->parent_id) {
+            $data['content']['_col'] = $target->data['content']['_col'] ?? 0;
+        }
         $node->update(['parent_id' => $target->parent_id, 'sort' => $sort, 'data' => $data]);
 
         $this->resequence($oldParent);
@@ -695,6 +700,25 @@ class Editor extends Component
         $this->selectNode($id);
     }
 
+    /** Custom node name shown in navigator/chips (stored as _label). */
+    public function renameNode(int $id, string $name): void
+    {
+        $node = $this->draftNodes()->whereKey($id)->first();
+        if (! $node) {
+            return;
+        }
+
+        $data = $node->data ?? [];
+        $name = trim($name);
+        if ($name === '') {
+            unset($data['content']['_label']);
+        } else {
+            $data['content']['_label'] = mb_substr($name, 0, 60);
+        }
+        $node->update(['data' => $data]);
+        $this->page->touch();
+    }
+
     public function toggleVisible(int $id): void
     {
         $node = $this->draftNodes()->whereKey($id)->first();
@@ -973,7 +997,7 @@ class Editor extends Component
             foreach ($nodes as $n) {
                 $rows[] = [
                     'id' => $n->id,
-                    'label' => $registry->get($n->type)::label(),
+                    'label' => $n->data['content']['_label'] ?? $registry->get($n->type)::label(),
                     'visible' => $n->visible,
                     'depth' => $depth,
                 ];

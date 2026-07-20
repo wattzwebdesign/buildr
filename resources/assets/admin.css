@@ -814,3 +814,7 @@ html:not([data-theme="light"]) input[type="number"]::-webkit-inner-spin-button{f
 
 /* publish/save button never wraps */
 .publish{white-space:nowrap}
+
+/* navigator: drag-reorder lines */
+.nav-row.drop-before{box-shadow:0 -2px 0 0 var(--accent)}
+.nav-row.drop-after{box-shadow:0 2px 0 0 var(--accent)}

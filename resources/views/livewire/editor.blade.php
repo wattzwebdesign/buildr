@@ -430,6 +430,37 @@ body{overflow:hidden}
         inp.value = inp.value.slice(0, s) + token + inp.value.slice(e);
         inp.dispatchEvent(new Event('input', { bubbles: true }));
       };
+      window.navPanel = () => ({
+        x: null, y: null, dx: 0, dy: 0, moving: false,
+        init() {
+          try {
+            const saved = JSON.parse(localStorage.getItem('buildr-nav-pos') || 'null');
+            if (saved) { this.x = saved.x; this.y = saved.y; }
+          } catch (e) {}
+        },
+        pos() {
+          return this.x !== null
+            ? `left:${Math.max(0, this.x)}px;top:${Math.max(40, this.y)}px;right:auto`
+            : '';
+        },
+        start(e) {
+          if (e.target.closest('button')) return;
+          const r = this.$el.getBoundingClientRect();
+          this.dx = e.clientX - r.left; this.dy = e.clientY - r.top;
+          this.moving = true;
+          e.target.setPointerCapture(e.pointerId);
+        },
+        move(e) {
+          if (!this.moving) return;
+          this.x = e.clientX - this.dx;
+          this.y = e.clientY - this.dy;
+        },
+        end() {
+          if (!this.moving) return;
+          this.moving = false;
+          localStorage.setItem('buildr-nav-pos', JSON.stringify({ x: this.x, y: this.y }));
+        },
+      });
       window.colorPicker = (path, initial, ckey, swatches) => ({
         open: false, drag: null, h: 0, s: 1, v: 1, hex: initial || '', swatches: swatches || [],
         display() {
@@ -565,11 +596,31 @@ body{overflow:hidden}
             drag = { kind: 'move', id: parseInt(el.dataset.bnode) };
             e.dataTransfer.setData('text/plain', 'buildr');
             e.stopPropagation();
+            return;
+          }
+          const nr = e.target.closest('.nav-row[data-nav-id]');
+          if (nr) {
+            drag = { kind: 'move', id: parseInt(nr.dataset.navId) };
+            e.dataTransfer.setData('text/plain', 'buildr');
           }
         });
 
         document.addEventListener('dragover', e => {
           if (!drag) return;
+
+          // navigator rows: before/after line reordering
+          if (drag.kind === 'move') {
+            const nr = e.target.closest('.nav-row[data-nav-id]');
+            if (nr && parseInt(nr.dataset.navId) !== drag.id) {
+              e.preventDefault();
+              const rect = nr.getBoundingClientRect();
+              const before = e.clientY < rect.top + rect.height / 2;
+              if (lineEl !== nr) { clear(); lineEl = nr; }
+              nr.classList.toggle('drop-before', before);
+              nr.classList.toggle('drop-after', !before);
+              return;
+            }
+          }
 
           // moving: hovering a NON-container element shows a before/after
           // line; containers mean "drop INTO me" and fall through below
@@ -608,7 +659,8 @@ body{overflow:hidden}
           if (drag.kind === 'move' && lineEl) {
             e.preventDefault();
             const pos = lineEl.classList.contains('drop-before') ? 'before' : 'after';
-            w?.call('moveNodeRelative', drag.id, parseInt(lineEl.dataset.bnode), pos);
+            const targetId = lineEl.dataset.navId || lineEl.dataset.bnode;
+            w?.call('moveNodeRelative', drag.id, parseInt(targetId), pos);
             return finish();
           }
 
@@ -850,21 +902,33 @@ body{overflow:hidden}
       </button>
     </div>
 
-    <!-- NAVIGATOR -->
+    <!-- NAVIGATOR (draggable panel; drag rows to reorder; dbl-click to rename) -->
     @if ($showNav)
-      <div class="navigator open">
-        <div class="nav-head">Navigator
+      <div class="navigator open" x-data="navPanel()" :style="pos()">
+        <div class="nav-head" style="cursor:grab;user-select:none"
+             @pointerdown="start($event)" @pointermove="move($event)" @pointerup="end($event)">
+          Navigator
           <button wire:click="toggleNav"><svg class="ic" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
         <div class="nav-list">
           @foreach ($tree as $row)
             <div class="nav-row {{ $selectedId === $row['id'] ? 'sel' : '' }}"
+                 draggable="true" data-nav-id="{{ $row['id'] }}"
                  style="padding-left:{{ 8 + $row['depth'] * 16 }}px;{{ $row['depth'] > 0 ? 'font-weight:500' : '' }}"
-                 wire:key="nav-{{ $row['id'] }}" wire:click="selectNode({{ $row['id'] }})">
-              {{ $row['label'] }}
-              <button class="eye" wire:click.stop="moveNode({{ $row['id'] }}, 'up')" title="Move up"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m18 15-6-6-6 6"/></svg></button>
-              <button class="eye" style="margin-left:0" wire:click.stop="moveNode({{ $row['id'] }}, 'down')" title="Move down"><svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m6 9 6 6 6-6"/></svg></button>
-              <button class="eye" style="margin-left:0" wire:click.stop="toggleVisible({{ $row['id'] }})" title="Toggle visibility">
+                 wire:key="nav-{{ $row['id'] }}" wire:click="selectNode({{ $row['id'] }})"
+                 x-data="{ ren: false }">
+              <span class="grip" style="color:var(--chrome-muted);cursor:grab;display:grid;place-items:center">
+                <svg class="ic" viewBox="0 0 24 24" style="width:11px;height:11px"><circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+              </span>
+              <span x-show="!ren" @dblclick.stop="ren = true; $nextTick(() => $refs.ri.focus())"
+                    style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Double-click to rename">{{ $row['label'] }}</span>
+              <input x-show="ren" x-ref="ri" x-cloak value="{{ $row['label'] }}"
+                     class="in" style="flex:1;padding:3px 7px;font-size:11.5px;min-width:0"
+                     @click.stop @dblclick.stop
+                     @keydown.enter.prevent="$wire.renameNode({{ $row['id'] }}, $event.target.value); ren = false"
+                     @keydown.escape.stop="ren = false"
+                     @blur="ren && $wire.renameNode({{ $row['id'] }}, $event.target.value); ren = false">
+              <button class="eye" wire:click.stop="toggleVisible({{ $row['id'] }})" title="Toggle visibility">
                 <svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px">@if ($row['visible'])<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>@else<path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a17.6 17.6 0 0 1 4.06-4.94"/><line x1="2" y1="2" x2="22" y2="22"/>@endif</svg>
               </button>
             </div>
