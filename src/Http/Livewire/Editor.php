@@ -779,10 +779,36 @@ class Editor extends Component
 
     private function resequence(?int $parentId): void
     {
-        $this->page->nodes()
+        $children = $this->draftNodes()
             ->where('parent_id', $parentId)
-            ->orderBy('sort')->get()
-            ->each(fn ($n, $i) => $n->sort === $i || $n->update(['sort' => $i]));
+            ->orderBy('sort')->get()->values();
+
+        $children->each(fn ($n, $i) => $n->sort === $i || $n->update(['sort' => $i]));
+
+        // When a container's children are all containers, they ARE its
+        // columns — their column index must always follow their order,
+        // so reordering columns swaps tracks instead of stacking them.
+        if ($parentId === null || $children->isEmpty()) {
+            return;
+        }
+        if ($children->contains(fn ($n) => $n->type !== 'container')) {
+            return;
+        }
+
+        $parent = $this->draftNodes()->whereKey($parentId)->first();
+        if (! $parent || $parent->type !== 'container') {
+            return;
+        }
+
+        $cols = max(1, count($parent->data['content']['widths'] ?? [100]));
+        foreach ($children as $i => $child) {
+            $col = min($i, $cols - 1);
+            if ((int) ($child->data['content']['_col'] ?? -1) !== $col) {
+                $data = $child->data ?? [];
+                $data['content']['_col'] = $col;
+                $child->update(['data' => $data]);
+            }
+        }
     }
 
     /** Any panel edit: persist the edited tab's settings into the node. */

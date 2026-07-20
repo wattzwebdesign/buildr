@@ -513,6 +513,34 @@ class EditorTreeTest extends TestCase
             $page->nodes()->whereKey($a)->first()->data['content']['_label']);
     }
 
+    public function test_reordering_column_containers_swaps_tracks(): void
+    {
+        $page = Page::create(['title' => 'New', 'slug' => 'new']);
+
+        $component = Livewire::test(Editor::class, ['page' => $page])
+            ->call('addContainer', 3);
+
+        $root = $page->rootNodes()->first();
+        [$left, $center, $right] = $root->children()->orderBy('sort')->get();
+
+        // put an image in the CENTER column, then drag center before left
+        $component->call('dropInto', 'image', $center->id, 0)
+            ->call('moveNodeRelative', $center->id, $left->id, 'before');
+
+        $columns = $root->children()->orderBy('sort')->get();
+        $this->assertSame([$center->id, $left->id, $right->id], $columns->pluck('id')->all());
+        // column indexes follow the new order — no stacking into one track
+        $this->assertSame([0, 1, 2], $columns->map(fn ($c) => $c->data['content']['_col'])->all());
+
+        // editor render: first track is the container holding the image
+        $editor = app(\Buildr\Render\PageRenderer::class)->renderEditor($page->fresh());
+        $html = $editor['roots'][0]['html'];
+        $this->assertTrue(
+            strpos($html, 'placeholder.svg') < strpos($html, 'Drop an element here'),
+            'moved column with image should render in the first track'
+        );
+    }
+
     public function test_editor_render_tags_children_for_selection(): void
     {
         $page = Page::create(['title' => 'New', 'slug' => 'new']);
