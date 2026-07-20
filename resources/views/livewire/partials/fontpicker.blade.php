@@ -1,5 +1,5 @@
 {{-- $path: wire path to set, $current: current value --}}
-<div class="fontpick" x-data="fontPicker(@js($path), @js($current ?? ''))">
+<div class="fontpick" wire:ignore x-data="fontPicker(@js($path), @js($current ?? ''))">
   <button type="button" class="in" style="text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px"
           @click="toggle()" x-init="value && loadPreviewFont(value)">
     <span x-text="value || 'Default'" :style="value ? `font-family:'${value}'` : ''"></span>

@@ -1,5 +1,5 @@
 {{-- $path: wire path, $current: value --}}
-<div x-data="iconPicker(@js($path), @js($current ?? ''))">
+<div wire:ignore x-data="iconPicker(@js($path), @js($current ?? ''))">
   <button type="button" class="in" style="text-align:left;display:flex;align-items:center;gap:10px" @click="toggle()">
     <span class="ipk-cur" style="display:grid;place-items:center;width:20px;height:20px">{!! \Buildr\Support\Icons::svg($current ?? '', 18) !!}</span>
     <span x-text="label()" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>

@@ -1,5 +1,5 @@
 {{-- $path: wire path, $current: value, $ckey: livecss key|null, $swatches: global swatches --}}
-<div class="cpk" x-data="colorPicker(@js($path), @js($current ?? ''), @js($ckey ?? null), @js($swatches ?? []))">
+<div class="cpk" wire:ignore x-data="colorPicker(@js($path), @js($current ?? ''), @js($ckey ?? null), @js($swatches ?? []))">
   <button type="button" class="cpk-swatch" @click="toggle()" :style="`background:${display() || 'transparent'}`"
           :class="!display() && 'empty'" title="Pick color"></button>
   <div x-show="open" x-cloak @click.outside="open = false" class="cpk-pop">
