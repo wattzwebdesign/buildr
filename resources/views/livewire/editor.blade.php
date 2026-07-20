@@ -601,25 +601,30 @@ body{overflow:hidden}
           m.style.top = Math.min(e.clientY, window.innerHeight - mh - 12) + 'px';
         });
 
-        document.addEventListener('click', e => {
+        document.addEventListener('click', async e => {
           const btn = e.target.closest('#bctx button');
           if (!btn) {
             if (performance.now() - ctxAt < 200) return; // trailing click of the right-click itself
             hideCtx(); return;
           }
           const id = parseInt(ctx().dataset.node);
+          const act = btn.dataset.act;
+          hideCtx();
           const w = wire();
-          switch (btn.dataset.act) {
+          switch (act) {
             case 'edit': w?.call('selectNode', id); break;
             case 'duplicate': w?.call('duplicateNode', id); break;
             case 'copy': w?.call('copyToClipboard', id); break;
             case 'paste': w?.call('pasteAfter', id); break;
             case 'pastestyle': w?.call('pasteStyleTo', id); break;
-            case 'resetstyle': if (confirm('Reset all Style settings on this element?')) w?.call('resetStyle', id); break;
+            case 'resetstyle':
+              if (await bConfirm('Reset all Style settings on this element?', { okText: 'Reset' })) w?.call('resetStyle', id);
+              break;
             case 'structure': w?.call('toggleNav'); break;
-            case 'delete': if (confirm('Delete this element?')) w?.call('deleteNode', id); break;
+            case 'delete':
+              if (await bConfirm('Delete this element?', { danger: true })) w?.call('deleteNode', id);
+              break;
           }
-          hideCtx();
         });
         document.addEventListener('scroll', hideCtx, true);
         document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtx(); });
